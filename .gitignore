@@ -1,0 +1,16 @@
+﻿# Secrets
+**/.env
+**/.env.*
+!**/.env.example
+
+# PHP dependencies (future)
+**/vendor/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs
+*.log
