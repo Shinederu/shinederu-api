@@ -9,6 +9,15 @@ Backends des projets Shinederu et configuration de deploiement API.
 - `index.html` : page statique de base
 - `Nginx Configuration File.txt` : exemple de configuration Nginx
 
+## Base de donnees partagee
+
+Les projets utilisent la meme instance MySQL, avec separation logique par schema/utilisateur:
+
+- `auth/` -> schema `ShinedeCore` (credentials `DB_*`)
+- `melodyquest/` -> schema `MelodyQuest` (credentials `MQ_DB_*`)
+
+Cette separation doit etre conservee pour limiter les droits de chaque backend.
+
 ## Securite
 
 - Les secrets ne doivent jamais etre versionnes.
