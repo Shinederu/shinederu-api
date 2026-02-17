@@ -37,6 +37,21 @@ composer install --no-dev --optimize-autoloader
 3. Installer les dependances Composer
 4. Verifier les permissions fichiers
 
+## MelodyQuest backend (env)
+
+Le backend `melodyquest/` lit ses credentials DB via variables d'environnement:
+
+- `MQ_DB_TYPE`
+- `MQ_DB_HOST`
+- `MQ_DB_NAME`
+- `MQ_DB_USER`
+- `MQ_DB_PASS`
+- `MQ_DB_PORT`
+
+Template fourni:
+
+- `melodyquest/.env.example`
+
 ## Rotation credentials (obligatoire)
 
 Les anciens secrets ont ete presents dans l'historique avant hardening. Il faut:
