@@ -1,0 +1,49 @@
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+
+    server_name api.shinederu.lol;
+    root /var/www/API;
+    index index.php index.html;
+
+    ssl_certificate /etc/nginx/ssl/*.shinederu.lol_shinederu.lol_P256/fullchain.cer;
+    ssl_certificate_key /etc/nginx/ssl/*.shinederu.lol_shinederu.lol_P256/private.key;
+
+    client_max_body_size 120G;
+
+    # ---- CORS : calcule le domain autorisé ----
+    set $cors "https://shinederu.lol";
+    if ($http_origin ~* "^https?://([a-zA-Z0-9_-]+\.)*shinederu\.lol$") {
+        set $cors $http_origin;
+    }
+
+    # ---- Gestion OPTIONS AVANT PHP ----
+    location / {
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin $cors always;
+            add_header Access-Control-Allow-Credentials true always;
+            add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE" always;
+            add_header Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With" always;
+            add_header Vary Origin always;
+            return 204;
+        }
+
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # ---- CORS global pour les autres méthodes ----
+    add_header Access-Control-Allow-Origin $cors always;
+    add_header Access-Control-Allow-Credentials true always;
+    add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE" always;
+    add_header Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With" always;
+    add_header Vary Origin always;
+
+    # ---- PHP ----
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass PHP-FPM:9000;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        
+    }
+}
