@@ -9,14 +9,38 @@ Backends des projets Shinederu et configuration de deploiement API.
 - `index.html` : page statique de base
 - `Nginx Configuration File.txt` : exemple de configuration Nginx
 
+## Mapping deploiement (serveur actuel)
+
+- Dossier deploye: `API/`
+- Auth: `API/auth/index.php` -> `https://api.shinederu.lol/auth/`
+- MelodyQuest: `API/melodyquest/index.php` -> `https://api.shinederu.lol/melodyquest/`
+
 ## Base de donnees partagee
 
-Les projets utilisent la meme instance MySQL, avec separation logique par schema/utilisateur:
+Les projets utilisent la meme instance MySQL et le meme schema partage:
 
-- `auth/` -> schema `ShinedeCore` (credentials `DB_*`)
-- `melodyquest/` -> schema `MelodyQuest` (credentials `MQ_DB_*`)
+- `auth/` -> schema partage (credentials `DB_*`)
+- `melodyquest/` -> schema partage (credentials `MQ_DB_*`)
 
-Cette separation doit etre conservee pour limiter les droits de chaque backend.
+Les identifiants techniques peuvent differer (`DB_*` / `MQ_DB_*`), mais pointent vers le meme schema.
+
+## MelodyQuest (blindtest)
+
+- Auth partagee via `auth/` (session commune domaine/sous-domaines)
+- Frontend sans framework (JS/CSS/HTML)
+- Lobbies configurables par leur createur
+- Catalogue YouTube structure par categories/familles
+- Admin catalogue via role utilisateur en DB (`users.role`)
+- Backend PHP structure inspiree de `auth/`:
+  - `melodyquest/controllers`
+  - `melodyquest/services`
+  - `melodyquest/middlewares`
+  - `melodyquest/utils`
+  - `melodyquest/config`
+
+Migration schema MelodyQuest:
+
+- `melodyquest/sql/001_melodyquest_core.sql`
 
 ## Securite
 
