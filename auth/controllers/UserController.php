@@ -9,6 +9,58 @@ require_once __DIR__ . '/../config/config.php';
 
 class UserController
 {
+    private function ensureAdmin(int $userId): void
+    {
+        $authService = new AuthService();
+        if (!$authService->isUserAdmin($userId)) {
+            json_error('Acces refuse', 403);
+        }
+    }
+
+    public function listUsers(int $requestUserId): void
+    {
+        $this->ensureAdmin($requestUserId);
+
+        $authService = new AuthService();
+        $users = $authService->listUsersForAdmin();
+
+        json_success(null, ['users' => $users]);
+    }
+
+    public function updateUserRole(array $data, int $requestUserId): void
+    {
+        $this->ensureAdmin($requestUserId);
+
+        $input = sanitizeArray($data);
+        $targetUserId = isset($input['userId']) ? (int) $input['userId'] : 0;
+        $role = $input['role'] ?? '';
+        $isAdminInput = $input['is_admin'] ?? null;
+
+        if ($targetUserId <= 0) {
+            json_error('Utilisateur cible invalide', 400);
+        }
+
+        if (!in_array($role, ['admin', 'user'], true)) {
+            if ($isAdminInput !== null) {
+                $role = filter_var($isAdminInput, FILTER_VALIDATE_BOOLEAN) ? 'admin' : 'user';
+            } else {
+                json_error('Role invalide', 400);
+            }
+        }
+
+        $authService = new AuthService();
+        $targetUser = $authService->getUserById($targetUserId);
+
+        if (!$targetUser) {
+            json_error('Utilisateur non trouve', 404);
+        }
+
+        if (!$authService->updateUserRole($targetUserId, $role)) {
+            json_error('Erreur serveur pendant la mise a jour du role', 500);
+        }
+
+        json_success('Role utilisateur mis a jour');
+    }
     /**
      * Supprime le compte utilisateur et déconnecte.
      * Attend un tableau de données avec 'password' pour confirmation.

@@ -5,6 +5,7 @@ require_once __DIR__ . '/TokenService.php';
 class AuthService
 {
     private $db;
+    private ?bool $hasIsAdminColumn = null;
 
     public function __construct()
     {
@@ -20,13 +21,19 @@ class AuthService
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
         // Insertion utilisateur
-        $this->db->insert('users', [
+        $payload = [
             'username' => $username,
             'email' => $email,
             'password_hash' => $passwordHash,
             'role' => 'user',
             'email_verified' => 0
-        ]);
+        ];
+
+        if ($this->hasIsAdminColumn()) {
+            $payload['is_admin'] = 0;
+        }
+
+        $this->db->insert('users', $payload);
 
         return $this->db->id() !== null;
     }
@@ -67,7 +74,7 @@ class AuthService
      * Génère et stocke un token de vérification d'email pour un utilisateur.
      * Retourne le token généré.
      */
-    public function createEmailVerificationToken(int $userId, string $newEmail = null): string
+    public function createEmailVerificationToken(int $userId, ?string $newEmail = null): string
     {
         $token = TokenService::generateToken(64);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+1 day'));
@@ -137,16 +144,75 @@ class AuthService
      */
     public function getUserById($userId)
     {
-        return $this->db->get('users', [
+        $columns = [
             'id',
             'username',
             'email',
             'avatar_url',
             'role',
             'created_at'
-        ], [
+        ];
+
+        if ($this->hasIsAdminColumn()) {
+            $columns[] = 'is_admin';
+        }
+
+        $user = $this->db->get('users', $columns, [
             'id' => $userId
         ]);
+
+        return $this->mapUserAdminFields($user);
+    }
+
+    public function getUserRoleById(int $userId)
+    {
+        $user = $this->getUserById($userId);
+        return $user['role'] ?? null;
+    }
+
+    public function isUserAdmin(int $userId): bool
+    {
+        $user = $this->getUserById($userId);
+        return (bool)($user['is_admin'] ?? false);
+    }
+
+    public function listUsersForAdmin(): array
+    {
+        $columns = [
+            'id',
+            'username',
+            'email',
+            'role',
+            'created_at'
+        ];
+
+        if ($this->hasIsAdminColumn()) {
+            $columns[] = 'is_admin';
+        }
+
+        $users = $this->db->select('users', $columns, [
+            'ORDER' => [
+                'created_at' => 'DESC'
+            ]
+        ]);
+
+        if (!is_array($users)) {
+            return [];
+        }
+
+        return array_map(fn($user) => $this->mapUserAdminFields($user), $users);
+    }
+
+    public function updateUserRole(int $userId, string $role): bool
+    {
+        $payload = ['role' => $role];
+        if ($this->hasIsAdminColumn()) {
+            $payload['is_admin'] = $role === 'admin' ? 1 : 0;
+        }
+
+        $this->db->update('users', $payload, ['id' => $userId]);
+
+        return $this->db->error === null;
     }
 
 
@@ -243,6 +309,54 @@ class AuthService
     public function consumeEmailVerificationToken(string $token)
     {
         $this->db->delete('email_verification_tokens', ['token' => $token]);
+    }
+
+    private function hasIsAdminColumn(): bool
+    {
+        if ($this->hasIsAdminColumn !== null) {
+            return $this->hasIsAdminColumn;
+        }
+
+        $result = $this->db->query(
+            "SELECT 1
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = 'users'
+               AND COLUMN_NAME = 'is_admin'
+             LIMIT 1"
+        )->fetch();
+
+        $this->hasIsAdminColumn = (bool)$result;
+        return $this->hasIsAdminColumn;
+    }
+
+    private function toBool($value): bool
+    {
+        if ($value === null) {
+            return false;
+        }
+        if (is_bool($value)) {
+            return $value;
+        }
+        if (is_numeric($value)) {
+            return (int)$value === 1;
+        }
+
+        $v = strtolower(trim((string)$value));
+        return in_array($v, ['1', 'true', 'yes', 'on', 'admin'], true);
+    }
+
+    private function mapUserAdminFields($user)
+    {
+        if (!is_array($user)) {
+            return $user;
+        }
+
+        $isAdmin = $this->toBool($user['is_admin'] ?? null) || strtolower((string)($user['role'] ?? '')) === 'admin';
+        $user['is_admin'] = $isAdmin;
+        $user['role'] = $isAdmin ? 'admin' : 'user';
+
+        return $user;
     }
 
 

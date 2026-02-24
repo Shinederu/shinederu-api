@@ -47,6 +47,10 @@ try {
                 case 'getAvatar':
                     (new UserController())->getAvatar($_GET);
                     exit;
+                case 'listUsers':
+                    $userId = AuthMiddleware::check();
+                    (new UserController())->listUsers($userId);
+                    exit;
                 default:
                     unknownAction('GET');
                     exit;
@@ -106,6 +110,10 @@ try {
                 case 'requestEmailUpdate':
                     $userId = AuthMiddleware::check();
                     (new AuthController())->requestEmailUpdate($body, $userId);
+                    exit;
+                case 'updateUserRole':
+                    $userId = AuthMiddleware::check();
+                    (new UserController())->updateUserRole($body, $userId);
                     exit;
                 default:
                     unknownAction('PUT');

@@ -16,7 +16,7 @@ if (preg_match('#^/auth(?:/|$)#', $normalized) === 1) {
     exit;
 }
 
-if (preg_match('#^/(melodyquest|melody)(?:/|$)#', $normalized) === 1) {
+if (preg_match('#^/melodyquest(?:/|$)#', $normalized) === 1) {
     require __DIR__ . '/melodyquest/index.php';
     exit;
 }
@@ -27,4 +27,5 @@ echo json_encode([
     'success' => false,
     'message' => 'Unknown API endpoint',
 ]);
+
 

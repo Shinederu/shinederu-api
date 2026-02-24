@@ -372,6 +372,7 @@ class AuthController
 
         // On filtre les infos sensibles avant de renvoyer
         unset($user['password_hash']);
+        $user['is_admin'] = (bool)($user['is_admin'] ?? false);
 
         json_success(null, ['user' => $user]);
     }
