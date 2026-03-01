@@ -14,3 +14,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Box runtime artifacts
+box/_ratelimit/

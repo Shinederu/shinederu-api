@@ -7,6 +7,7 @@ Backends des projets Shinederu et configuration de deploiement API.
 - `auth/` : API d'authentification
 - `melodyquest/` : backend MelodyQuest
 - `main-site/` : backend du site principal (annonces, contenus dynamiques)
+- `box/` : backend ShinedeBox (gestion fichiers admin)
 - `index.html` : page statique de base
 - `Nginx Configuration File.txt` : exemple de configuration Nginx
 
@@ -16,6 +17,7 @@ Backends des projets Shinederu et configuration de deploiement API.
 - Auth: `API/auth/index.php` -> `https://api.shinederu.lol/auth/`
 - MelodyQuest: `API/melodyquest/index.php` -> `https://api.shinederu.lol/melodyquest/`
 - Main site: `API/main-site/index.php` -> `https://api.shinederu.lol/main-site/`
+- Box: `API/box/*.php` -> `https://api.shinederu.lol/box/`
 
 ## Base de donnees partagee
 
@@ -24,6 +26,7 @@ Les projets utilisent la meme instance MySQL et le meme schema partage:
 - `auth/` -> schema partage (credentials `DB_*`)
 - `melodyquest/` -> schema partage (credentials `MQ_DB_*`)
 - `main-site/` -> schema partage (credentials `DB_*`)
+- `box/` -> schema partage (credentials `DB_*` ou `MQ_DB_*`)
 
 Les identifiants techniques peuvent differer (`DB_*` / `MQ_DB_*`), mais pointent vers le meme schema.
 
