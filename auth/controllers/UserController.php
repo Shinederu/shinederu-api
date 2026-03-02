@@ -85,8 +85,8 @@ class UserController
         $sessionService->deleteAllSessionsForUser($userId);
 
         // Efface les cookies de session (nouveau et legacy)
-        setcookie('sid', '', time() - 3600, '/', '.shinederu.lol', true, true);
-        setcookie('session_id', '', time() - 3600, '/', '.shinederu.lol', true, true);
+        setcookie('sid', '', time() - 3600, '/', '.shinederu.ch', true, true);
+        setcookie('session_id', '', time() - 3600, '/', '.shinederu.ch', true, true);
 
         json_success('Compte supprimé et déconnecté');
     }

@@ -2,7 +2,7 @@
 
 Backend API de ShinedeBox, expose sous:
 
-- `https://api.shinederu.lol/box/`
+- `https://api.shinederu.ch/box/`
 
 ## Endpoints
 
@@ -15,7 +15,7 @@ Backend API de ShinedeBox, expose sous:
 
 ## Authentification
 
-- Session centralisee via cookie `sid` (domaine `.shinederu.lol`)
+- Session centralisee via cookie `sid` (domaine `.shinederu.ch`)
 - Validation session dans table `sessions`
 - Acces metier reserve aux admins:
   - `users.is_admin = 1` ou

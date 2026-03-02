@@ -21,12 +21,12 @@ switch ($action) {
 
     case 'logout':
         // Local cookie cleanup is best-effort.
-        setcookie('sid', '', time() - 3600, '/', '.shinederu.lol', true, true);
-        setcookie('session_id', '', time() - 3600, '/', '.shinederu.lol', true, true);
+        setcookie('sid', '', time() - 3600, '/', '.shinederu.ch', true, true);
+        setcookie('session_id', '', time() - 3600, '/', '.shinederu.ch', true, true);
 
         json_response(200, [
             'success' => true,
-            'logout_url' => rtrim((string)env('AUTH_API_BASE', 'https://api.shinederu.lol/auth/'), '/') . '/?action=logout',
+            'logout_url' => rtrim((string)env('AUTH_API_BASE', 'https://api.shinederu.ch/auth/'), '/') . '/?action=logout',
         ]);
         break;
 

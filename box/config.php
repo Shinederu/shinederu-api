@@ -81,11 +81,11 @@ load_dotenv($projectRoot . '/auth/.env');
 // Extra fallback for multi-repo workspace path.
 load_dotenv($workspaceRoot . '/API/auth/.env');
 
-$BASE_URL = env('BASE_URL', 'https://box.shinederu.lol');
-$AUTH_PORTAL_URL = env('AUTH_PORTAL_URL', 'https://auth.shinederu.lol');
-$AUTH_API_BASE = env('AUTH_API_BASE', 'https://api.shinederu.lol/auth/');
+$BASE_URL = env('BASE_URL', 'https://box.shinederu.ch');
+$AUTH_PORTAL_URL = env('AUTH_PORTAL_URL', 'https://auth.shinederu.ch');
+$AUTH_API_BASE = env('AUTH_API_BASE', 'https://api.shinederu.ch/auth/');
 
-$UPLOAD_DIR = env('UPLOAD_DIR', '/var/www/html/box.shinederu.lol/public/uploads');
+$UPLOAD_DIR = env('UPLOAD_DIR', '/var/www/html/box.shinederu.ch/public/uploads');
 $MAX_FILE_MB = (int)(env('MAX_FILE_MB', '20480'));
 $ALLOWED_EXT = array_filter(array_map('trim', explode(',', env('ALLOWED_EXT', '.zip,.jar,.png,.jpg,.jpeg,.pdf,.rar'))));
 $ALLOWED_MIME = array_filter(array_map('trim', explode(',', env('ALLOWED_MIME', 'application/zip,application/x-zip-compressed,application/x-zip,application/java-archive,application/x-java-archive,image/png,image/jpeg,application/pdf,application/vnd.rar,application/x-rar-compressed'))));

@@ -1,4 +1,4 @@
-﻿# Shinederu API
+# Shinederu API
 
 Backends des projets Shinederu et configuration de deploiement API.
 
@@ -14,10 +14,10 @@ Backends des projets Shinederu et configuration de deploiement API.
 ## Mapping deploiement (serveur actuel)
 
 - Dossier deploye: `API/`
-- Auth: `API/auth/index.php` -> `https://api.shinederu.lol/auth/`
-- MelodyQuest: `API/melodyquest/index.php` -> `https://api.shinederu.lol/melodyquest/`
-- Main site: `API/main-site/index.php` -> `https://api.shinederu.lol/main-site/`
-- Box: `API/box/*.php` -> `https://api.shinederu.lol/box/`
+- Auth: `API/auth/index.php` -> `https://api.shinederu.ch/auth/`
+- MelodyQuest: `API/melodyquest/index.php` -> `https://api.shinederu.ch/melodyquest/`
+- Main site: `API/main-site/index.php` -> `https://api.shinederu.ch/main-site/`
+- Box: `API/box/*.php` -> `https://api.shinederu.ch/box/`
 
 ## Base de donnees partagee
 

@@ -1,10 +1,10 @@
 # Main Site API
 
-Backend dedie au site principal `shinederu.lol`.
+Backend dedie au site principal `shinederu.ch`.
 
 ## Endpoint
 
-- URL cible (Nginx): `https://api.shinederu.lol/main-site/`
+- URL cible (Nginx): `https://api.shinederu.ch/main-site/`
 - Entry point: `main-site/index.php`
 
 ## Base de donnees

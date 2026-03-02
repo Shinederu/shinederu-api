@@ -9,7 +9,7 @@ class CorsMiddleware
         // Récupère l'origine de la requête
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-        // Autorise si domaine = shinederu.lol OU sous-domaine de shinederu.lol
+        // Autorise si domaine = shinederu.ch OU sous-domaine de shinederu.ch
         if (preg_match('#^https?://([a-z0-9-]+\.)*shinederu\.lol(:\d+)?$#i', $origin)) {
             header("Access-Control-Allow-Origin: $origin");
             header('Vary: Origin'); // Pour le cache proxy/CDN

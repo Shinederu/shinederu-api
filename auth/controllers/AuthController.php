@@ -62,8 +62,8 @@ class AuthController
 
         // Génère le token de vérif + envoie le mail
         $token = $auth->createEmailVerificationToken($userId);
-        $link = "https://shinederu.lol/newEmail?action=verifyEmail&token=$token";
-        $link2 = "https://shinederu.lol/newEmail?action=revokeRegister&token=$token";
+        $link = "https://shinederu.ch/newEmail?action=verifyEmail&token=$token";
+        $link2 = "https://shinederu.ch/newEmail?action=revokeRegister&token=$token";
 
         MailService::send(
             $email,
@@ -143,8 +143,8 @@ class AuthController
                 $token = $rec['token'];
             }
             $email = $user['email'];
-            $link = "https://shinederu.lol/newEmail?action=verifyEmail&token=$token";
-            $link2 = "https://shinederu.lol/newEmail?action=revokeRegister&token=$token";
+            $link = "https://shinederu.ch/newEmail?action=verifyEmail&token=$token";
+            $link2 = "https://shinederu.ch/newEmail?action=revokeRegister&token=$token";
 
             MailService::send(
                 $email,
@@ -165,7 +165,7 @@ class AuthController
         setcookie('sid', $sessionId, [
             'expires' => time() + (int)(SESSION_DURATION_HOURS * 3600),
             'path' => '/',
-            'domain' => '.shinederu.lol', // partage sous-domaines
+            'domain' => '.shinederu.ch', // partage sous-domaines
             'secure' => true,
             'httponly' => true,
             'samesite' => 'Lax',
@@ -189,8 +189,8 @@ class AuthController
         $sessionService->deleteSession($sessionId);
 
         // Supprime les cookies de session (nouveau et legacy)
-        setcookie('sid', '', time() - 3600, '/', '.shinederu.lol', true, true);
-        setcookie('session_id', '', time() - 3600, '/', '.shinederu.lol', true, true);
+        setcookie('sid', '', time() - 3600, '/', '.shinederu.ch', true, true);
+        setcookie('session_id', '', time() - 3600, '/', '.shinederu.ch', true, true);
 
         json_success('Déconnexion réussie');
     }
@@ -205,8 +205,8 @@ class AuthController
         $sessionService->deleteAllSessionsForUser($userId);
 
         // Supprime les cookies de session (nouveau et legacy)
-        setcookie('sid', '', time() - 3600, '/', '.shinederu.lol', true, true);
-        setcookie('session_id', '', time() - 3600, '/', '.shinederu.lol', true, true);
+        setcookie('sid', '', time() - 3600, '/', '.shinederu.ch', true, true);
+        setcookie('session_id', '', time() - 3600, '/', '.shinederu.ch', true, true);
 
         json_success('Déconnexion de tous les appareils réussie');
     }
@@ -231,7 +231,7 @@ class AuthController
         }
 
         $token = $auth->createPasswordResetToken($user['id']);
-        $resetLink = "https://shinederu.lol/newPassword?token=$token";
+        $resetLink = "https://shinederu.ch/newPassword?token=$token";
 
         // Envoie le mail
         MailService::send(
@@ -303,8 +303,8 @@ class AuthController
 
         // Génère un token de vérification email lié à l’update
         $token = $authService->createEmailVerificationToken($userId, $newEmail);
-        $link = "https://shinederu.lol/newEmail?token=$token&action=confirmEmailUpdate";
-        $link2 = "https://shinederu.lol/newEmail?token=$token&action=revokeEmailUpdate";
+        $link = "https://shinederu.ch/newEmail?token=$token&action=confirmEmailUpdate";
+        $link2 = "https://shinederu.ch/newEmail?token=$token&action=revokeEmailUpdate";
 
         MailService::send(
             $oldEmail,
