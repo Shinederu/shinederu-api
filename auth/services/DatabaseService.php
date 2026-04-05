@@ -33,4 +33,3 @@ class DatabaseService
         return self::$instance->medoo;
     }
 }
-?>

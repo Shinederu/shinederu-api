@@ -26,5 +26,3 @@ function json_error(string $message, int $status = 400, $errors = null): void
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
-
-?>

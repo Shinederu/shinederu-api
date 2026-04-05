@@ -66,7 +66,7 @@ class ProfileService
 
     public function normalizeToPng(string $bytes, int $maxSize = 512): string
     {
-        // 1) Crée une ressource GD
+        // 1) CrÃ©e une ressource GD
         $src = @imagecreatefromstring($bytes);
         if (!$src) {
             json_error('Fichier d\'image invalide ou corrompu', 400);
@@ -78,7 +78,7 @@ class ProfileService
         $x = (int) (($w - $size) / 2);
         $y = (int) (($h - $size) / 2);
 
-        // Crop carré
+        // Crop carrÃ©
         $crop = imagecreatetruecolor($size, $size);
         imagealphablending($crop, false);
         imagesavealpha($crop, true);
@@ -105,4 +105,3 @@ class ProfileService
     }
 
 }
-?>

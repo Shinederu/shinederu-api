@@ -6,4 +6,3 @@ define('SMTP_PASS', $_ENV['SMTP_PASS']);
 define('SMTP_PORT', $_ENV['SMTP_PORT']);
 define('SMTP_FROM', $_ENV['SMTP_FROM']);
 define('SMTP_NAME', $_ENV['SMTP_NAME']);
-?>

@@ -3,7 +3,7 @@
 class TokenService
 {
     /**
-     * Génère un token sécurisé.
+     * GÃ©nÃ¨re un token sÃ©curisÃ©.
      */
     public static function generateToken(int $length = 64): string
     {
@@ -12,5 +12,3 @@ class TokenService
 
     // (plus tard, tu peux ajouter des fonctions pour valider, blacklister, etc.)
 }
-
-?>

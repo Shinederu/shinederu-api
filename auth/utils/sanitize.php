@@ -32,10 +32,10 @@ function sanitizeArray(array $data): array
 
     foreach ($data as $key => $value) {
         if (is_array($value)) {
-            // Si c’est un sous-tableau, on le nettoie récursivement
+            // Si câ€™est un sous-tableau, on le nettoie rÃ©cursivement
             $clean[$key] = sanitizeArray($value);
         } else {
-            // Si c’est une valeur simple, on la nettoie
+            // Si câ€™est une valeur simple, on la nettoie
             $clean[$key] = trim(htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8'));
         }
     }
@@ -49,5 +49,3 @@ function sanitizeEmailInput(array $data): array
         'email' => trim(htmlspecialchars($data['email'] ?? '', ENT_QUOTES, 'UTF-8')),
     ];
 }
-
-?>

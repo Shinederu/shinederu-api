@@ -6,7 +6,7 @@ class CorsMiddleware
     {
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-        if (preg_match('#^https?://([a-z0-9-]+\.)*shinederu\.lol(:\d+)?$#i', $origin)) {
+        if (preg_match('#^https?://([a-z0-9-]+\.)*shinederu\\.ch(:\d+)?$#i', $origin)) {
             header("Access-Control-Allow-Origin: $origin");
             header('Vary: Origin');
         }

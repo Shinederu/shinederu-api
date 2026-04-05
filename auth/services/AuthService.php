@@ -13,7 +13,7 @@ class AuthService
     }
 
     /**
-     * Crée un nouvel utilisateur.
+     * CrÃ©e un nouvel utilisateur.
      */
     public function createUser(string $username, string $email, string $password): bool
     {
@@ -39,7 +39,7 @@ class AuthService
     }
 
     /**
-     * Vérifie qu’un utilisateur ou un email n’existe pas déjà.
+     * VÃ©rifie quâ€™un utilisateur ou un email nâ€™existe pas dÃ©jÃ .
      */
     public function userOrEmailExists(string $username, string $email): bool
     {
@@ -52,7 +52,7 @@ class AuthService
     }
 
     /**
-     * Vérifie les identifiants utilisateur (login).
+     * VÃ©rifie les identifiants utilisateur (login).
      * Retourne le user si OK, sinon false.
      */
     public function verifyCredentials(string $usernameOrEmail, string $password)
@@ -71,15 +71,15 @@ class AuthService
     }
 
     /**
-     * Génère et stocke un token de vérification d'email pour un utilisateur.
-     * Retourne le token généré.
+     * GÃ©nÃ¨re et stocke un token de vÃ©rification d'email pour un utilisateur.
+     * Retourne le token gÃ©nÃ©rÃ©.
      */
     public function createEmailVerificationToken(int $userId, ?string $newEmail = null): string
     {
         $token = TokenService::generateToken(64);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+1 day'));
 
-        // Supprime les anciens tokens de l’utilisateur (évite les doublons)
+        // Supprime les anciens tokens de lâ€™utilisateur (Ã©vite les doublons)
         $this->db->delete('email_verification_tokens', ['user_id' => $userId]);
 
         $this->db->insert('email_verification_tokens', [
@@ -93,8 +93,8 @@ class AuthService
 
 
     /**
-     * Vérifie un token de vérification d'email.
-     * Retourne true si validé, false sinon.
+     * VÃ©rifie un token de vÃ©rification d'email.
+     * Retourne true si validÃ©, false sinon.
      */
     public function verifyEmailToken(string $token): bool
     {
@@ -130,8 +130,8 @@ class AuthService
 
 
     /**
-     * Supprime un utilisateur et toutes ses données associées.
-     * Attention, irréversible !
+     * Supprime un utilisateur et toutes ses donnÃ©es associÃ©es.
+     * Attention, irrÃ©versible !
      */
     public function deleteUser($userId)
     {
@@ -139,8 +139,8 @@ class AuthService
     }
 
     /**
-     * Récupère les données utilisateur par son ID.
-     * Retourne l'utilisateur ou false si non trouvé.
+     * RÃ©cupÃ¨re les donnÃ©es utilisateur par son ID.
+     * Retourne l'utilisateur ou false si non trouvÃ©.
      */
     public function getUserById($userId)
     {
@@ -217,15 +217,15 @@ class AuthService
 
 
     /**
-     * Crée un token de réinitialisation de mot de passe pour un utilisateur.
-     * Retourne le token généré.
+     * CrÃ©e un token de rÃ©initialisation de mot de passe pour un utilisateur.
+     * Retourne le token gÃ©nÃ©rÃ©.
      */
     public function createPasswordResetToken(int $userId): string
     {
         $token = TokenService::generateToken(64);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
-        // Supprime les anciens tokens éventuels pour ce user
+        // Supprime les anciens tokens Ã©ventuels pour ce user
         $this->db->delete('password_reset_tokens', ['user_id' => $userId]);
 
         $this->db->insert('password_reset_tokens', [
@@ -237,7 +237,7 @@ class AuthService
     }
 
     /**
-     * Vérifie un token de réinitialisation de mot de passe.
+     * VÃ©rifie un token de rÃ©initialisation de mot de passe.
      * Retourne l'ID utilisateur si valide, false sinon.
      */
     public function verifyPasswordResetToken(string $token)
@@ -253,7 +253,7 @@ class AuthService
     }
 
     /**
-     * Consomme (supprime) un token de réinitialisation de mot de passe.
+     * Consomme (supprime) un token de rÃ©initialisation de mot de passe.
      */
     public function consumePasswordResetToken(string $token)
     {
@@ -261,8 +261,8 @@ class AuthService
     }
 
     /**
-     * Met à jour le mot de passe d'un utilisateur.
-     * Retourne true si succès, false sinon.
+     * Met Ã  jour le mot de passe d'un utilisateur.
+     * Retourne true si succÃ¨s, false sinon.
      */
     public function updatePassword(int $userId, string $newPassword): bool
     {
@@ -272,8 +272,8 @@ class AuthService
     }
 
     /**
-     * Récupère un utilisateur par son email.
-     * Retourne l'utilisateur ou false si non trouvé.
+     * RÃ©cupÃ¨re un utilisateur par son email.
+     * Retourne l'utilisateur ou false si non trouvÃ©.
      */
     public function getUserByEmail(string $email)
     {
@@ -363,5 +363,3 @@ class AuthService
 
 
 }
-
-?>

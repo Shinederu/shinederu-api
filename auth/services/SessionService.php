@@ -13,11 +13,11 @@ class SessionService
     }
 
     /**
-     * Crée une nouvelle session en DB et retourne l'ID de session généré.
+     * CrÃ©e une nouvelle session en DB et retourne l'ID de session gÃ©nÃ©rÃ©.
      */
     public function createSession(int $userId, int $durationHours = SESSION_DURATION_HOURS): string
     {
-        $sessionId = TokenService::generateToken(64); // ID sécurisé
+        $sessionId = TokenService::generateToken(64); // ID sÃ©curisÃ©
         $expiresAt = date('Y-m-d H:i:s', strtotime("+$durationHours hours"));
 
         $this->db->insert('sessions', [
@@ -29,7 +29,7 @@ class SessionService
     }
 
     /**
-     * Vérifie la validité d'une session (true = OK, false = KO).
+     * VÃ©rifie la validitÃ© d'une session (true = OK, false = KO).
      */
     public function isSessionValid(string $sessionId, bool $refresh = true): bool
     {
@@ -49,7 +49,7 @@ class SessionService
     }
 
     /**
-     * Récupère l'utilisateur lié à la session, ou false si invalide.
+     * RÃ©cupÃ¨re l'utilisateur liÃ© Ã  la session, ou false si invalide.
      */
     public function getUserIdFromSession(string $sessionId)
     {
@@ -68,7 +68,7 @@ class SessionService
     }
 
     /**
-     * Supprime une session (déconnexion).
+     * Supprime une session (dÃ©connexion).
      */
     public function deleteSession(string $sessionId): void
     {
@@ -83,5 +83,3 @@ class SessionService
         $this->db->delete('sessions', ['user_id' => $userId]);
     }
 }
-
-?>

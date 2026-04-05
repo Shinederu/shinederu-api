@@ -20,6 +20,3 @@ function getSessionId(): ?string
 
     return null;
 }
-
-?>
-

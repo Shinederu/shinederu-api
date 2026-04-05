@@ -62,14 +62,14 @@ class UserController
         json_success('Role utilisateur mis a jour');
     }
     /**
-     * Supprime le compte utilisateur et déconnecte.
-     * Attend un tableau de données avec 'password' pour confirmation.
+     * Supprime le compte utilisateur et dÃ©connecte.
+     * Attend un tableau de donnÃ©es avec 'password' pour confirmation.
      */
     public function deleteAccount(array $data = [], int $userId)
     {
         $sessionService = new SessionService();
 
-        // Vérifie le mot de passe pour confirmer la suppression
+        // VÃ©rifie le mot de passe pour confirmer la suppression
         $password = $data['password'] ?? ($_REQUEST['password'] ?? '');
         $authService = new AuthService();
         $user = $authService->getUserById($userId);
@@ -77,7 +77,7 @@ class UserController
             json_error('Mot de passe incorrect', 403);
         }
 
-        // Supprime l’utilisateur
+        // Supprime lâ€™utilisateur
         $authService = new AuthService();
         $authService->deleteUser($userId);
 
@@ -88,7 +88,7 @@ class UserController
         setcookie('sid', '', time() - 3600, '/', '.shinederu.ch', true, true);
         setcookie('session_id', '', time() - 3600, '/', '.shinederu.ch', true, true);
 
-        json_success('Compte supprimé et déconnecté');
+        json_success('Compte supprimÃ© et dÃ©connectÃ©');
     }
 
 
@@ -98,18 +98,18 @@ class UserController
         $username = $array['username'];
 
         if (strlen($username) < 4) {
-            json_error("Nom d’utilisateur trop court (minimum 4 caractères)", 400);
+            json_error("Nom dâ€™utilisateur trop court (minimum 4 caractÃ¨res)", 400);
         }
 
         if (strlen($username) > 64) {
-            json_error("Nom d’utilisateur trop long (maximum 64 caractères)", 400);
+            json_error("Nom dâ€™utilisateur trop long (maximum 64 caractÃ¨res)", 400);
         }
 
         $profileService = new ProfileService();
         if (!$profileService->updateProfile($userId, $username)) {
-            json_error('Nom d’utilisateur déjà pris', 400);
+            json_error('Nom dâ€™utilisateur dÃ©jÃ  pris', 400);
         }
-        json_success('Profil mis à jour');
+        json_success('Profil mis Ã  jour');
     }
 
 
@@ -120,17 +120,17 @@ class UserController
         $profileService = new ProfileService();
         $avatar = $profileService->getAvatar($userId);
         if (!$avatar) {
-            json_error('Avatar non trouvé', 404);
+            json_error('Avatar non trouvÃ©', 404);
         }
 
-        // Purge tout buffer de sortie éventuel pour éviter de corrompre l'image
+        // Purge tout buffer de sortie Ã©ventuel pour Ã©viter de corrompre l'image
         if (function_exists('ob_get_level')) {
             while (ob_get_level() > 0) {
                 @ob_end_clean();
             }
         }
 
-        // En-têtes explicites pour un rendu fiable cross-origin
+        // En-tÃªtes explicites pour un rendu fiable cross-origin
         header('Content-Type: image/png');
         header('X-Content-Type-Options: nosniff');
         header('Cross-Origin-Resource-Policy: cross-origin');
@@ -158,19 +158,19 @@ class UserController
         }
 
         if (!$avatarBytes) {
-            json_error('Aucune image reçue', 400);
+            json_error('Aucune image reÃ§ue', 400);
         }
 
         // limite de taille
         if (strlen($avatarBytes) > 5 * 1024 * 1024) { // 5 MB
             json_error('Image trop lourde (max 5 Mo).', 400);
         }
-        // Vérif MIME (depuis les octets, pas le nom de fichier)
+        // VÃ©rif MIME (depuis les octets, pas le nom de fichier)
         $finfo = new finfo(FILEINFO_MIME_TYPE);
         $mime = $finfo ? $finfo->buffer($avatarBytes) : null;
         $allowed = ALLOWED_MIME; // configurable via config.php / .env
         if (!$mime || !in_array($mime, $allowed, true)) {
-            json_error('Type non autorisé (PNG, JPEG ou WebP).', 400);
+            json_error('Type non autorisÃ© (PNG, JPEG ou WebP).', 400);
         }
 
         $profile = new ProfileService();
@@ -178,10 +178,8 @@ class UserController
         $result = $profile->saveUploadedPng($userId, $png);
 
         if (!$result) {
-            json_error("Échec de la mise à jour de l’image de profil dans la base de données", 500);
+            json_error("Ã‰chec de la mise Ã  jour de lâ€™image de profil dans la base de donnÃ©es", 500);
         }
-        json_success('Image de profil mise à jour');
+        json_success('Image de profil mise Ã  jour');
     }
 }
-
-?>
