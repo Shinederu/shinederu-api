@@ -19,6 +19,11 @@ Backends des projets Shinederu et configuration de deploiement API.
 - Main site: `API/main-site/index.php` -> `https://api.shinederu.ch/main-site/`
 - Box: `API/box/*.php` -> `https://api.shinederu.ch/box/`
 
+## CORS et domaines
+
+- La configuration Nginx de l'API doit autoriser `https://shinederu.ch` et ses sous-domaines `*.shinederu.ch`.
+- L'ancien domaine `*.shinederu.lol` ne doit plus etre utilise dans les regles CORS.
+
 ## Base de donnees partagee
 
 Les projets utilisent la meme instance MySQL et le meme schema partage:

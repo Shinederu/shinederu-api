@@ -14,7 +14,7 @@ server {
 
     # ---- CORS : calcule le domain autorisé ----
     set $cors "https://shinederu.ch";
-    if ($http_origin ~* "^https?://([a-zA-Z0-9_-]+\.)*shinederu\.lol$") {
+    if ($http_origin ~* "^https?://([a-zA-Z0-9_-]+\.)*shinederu\.ch$") {
         set $cors $http_origin;
     }
 
