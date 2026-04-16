@@ -15,12 +15,24 @@ class MailService
         $mail->SMTPAuth   = SMTP_AUTH;
         $mail->Username   = SMTP_USER;
         $mail->Password   = SMTP_PASS;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        $secureMode = self::resolveEncryption();
+        if ($secureMode !== '') {
+            $mail->SMTPSecure = $secureMode;
+        }
         $mail->Port       = SMTP_PORT;
 
         $mail->CharSet = 'UTF-8';
         $mail->setFrom(SMTP_FROM, SMTP_NAME);
         return $mail;
+    }
+
+    private static function resolveEncryption(): string
+    {
+        return match (SMTP_SECURE) {
+            'ssl', 'smtps' => PHPMailer::ENCRYPTION_SMTPS,
+            'tls', 'starttls' => PHPMailer::ENCRYPTION_STARTTLS,
+            default => '',
+        };
     }
 
     /**
