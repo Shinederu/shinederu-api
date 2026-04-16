@@ -21,21 +21,20 @@ class AuthController
         $password = $input['password'];
         $passwordConfirm = $input['password_confirm'];
 
-        // Validation classique
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             json_error('Adresse e-mail invalide', 400);
         }
 
         if (strlen($username) < 4) {
-            json_error("Nom dâ€™utilisateur trop court (minimum 4 caractÃ¨res)", 400);
+            json_error("Nom d'utilisateur trop court (minimum 4 caractères)", 400);
         }
 
         if (strlen($username) > 64) {
-            json_error("Nom dâ€™utilisateur trop long (maximum 64 caractÃ¨res)", 400);
+            json_error("Nom d'utilisateur trop long (maximum 64 caractères)", 400);
         }
 
         if (strlen($password) < 8) {
-            json_error('Le mot de passe doit faire au moins 8 caractÃ¨res', 400);
+            json_error('Le mot de passe doit faire au moins 8 caractères', 400);
         }
 
         if ($password !== $passwordConfirm) {
@@ -45,14 +44,13 @@ class AuthController
         $auth = new AuthService();
 
         if ($auth->userOrEmailExists($username, $email)) {
-            json_error('Utilisateur ou e-mail dÃ©jÃ  utilisÃ©', 409);
+            json_error('Utilisateur ou e-mail déjà utilisé', 409);
         }
 
         if (!$auth->createUser($username, $email, $password)) {
-            json_error('Erreur serveur lors de la crÃ©ation du compte', 500);
+            json_error('Erreur serveur lors de la création du compte', 500);
         }
 
-        // RÃ©cupÃ¨re lâ€™ID nouvellement crÃ©Ã©
         $db = DatabaseService::getInstance();
         $userId = $db->id();
 
@@ -60,7 +58,6 @@ class AuthController
         $profile = new ProfileService();
         $profile->setDefaultAvatarUrl($userId, $url);
 
-        // GÃ©nÃ¨re le token de vÃ©rif + envoie le mail
         $token = $auth->createEmailVerificationToken($userId);
         $link = "https://shinederu.ch/newEmail?action=verifyEmail&token=$token";
         $link2 = "https://shinederu.ch/newEmail?action=revokeRegister&token=$token";
@@ -74,7 +71,7 @@ class AuthController
             ]
         );
 
-        json_success('Inscription rÃ©ussie, vÃ©rifiez votre eâ€‘mail !');
+        json_success('Inscription réussie, vérifiez votre e-mail !');
     }
 
     public function revokeRegister(array $params)
@@ -86,14 +83,14 @@ class AuthController
 
         $ok = $auth->revokeRegister($token);
         if (!$ok) {
-            json_error('Lien invalide ou expirÃ©', 400);
+            json_error('Lien invalide ou expiré', 400);
         }
 
-        json_success("Lâ€™inscription a bien Ã©tÃ© annulÃ©e");
+        json_success("L'inscription a bien été annulée");
     }
 
     /**
-     * VÃ©rification email (GET /verify-email?token=...)
+     * Vérification d'e-mail
      */
     public function verifyEmail(array $params)
     {
@@ -104,9 +101,9 @@ class AuthController
         $ok = $auth->verifyEmailToken($token);
 
         if ($ok) {
-            json_success('Eâ€‘mail vÃ©rifiÃ©, vous pouvez vous connecter !');
+            json_success('E-mail vérifié, vous pouvez vous connecter !');
         } else {
-            json_error('Lien invalide ou expirÃ©', 400);
+            json_error('Lien invalide ou expiré', 400);
         }
     }
 
@@ -115,12 +112,11 @@ class AuthController
      */
     public function login(array $data)
     {
-        // EmpÃªche la reconnexion si une session valide existe dÃ©jÃ 
         $existingSid = getSessionId();
         if ($existingSid) {
             $sessionService = new SessionService();
             if ($sessionService->isSessionValid($existingSid)) {
-                json_success('DÃ©jÃ  connectÃ©', ['session_id' => $existingSid]);
+                json_success('Déjà connecté', ['session_id' => $existingSid]);
             }
         }
 
@@ -142,6 +138,7 @@ class AuthController
             } else {
                 $token = $rec['token'];
             }
+
             $email = $user['email'];
             $link = "https://shinederu.ch/newEmail?action=verifyEmail&token=$token";
             $link2 = "https://shinederu.ch/newEmail?action=revokeRegister&token=$token";
@@ -154,18 +151,17 @@ class AuthController
                     'revoke_link' => $link2,
                 ]
             );
-            json_error('Eâ€‘mail non vÃ©rifiÃ©, un nouvel eâ€‘mail vous a Ã©tÃ© envoyÃ©.', 403);
+
+            json_error('E-mail non vérifié, un nouvel e-mail vous a été envoyé.', 403);
         }
 
-        // CrÃ©e la session en DB
         $sessionService = new SessionService();
         $sessionId = $sessionService->createSession($user['id']);
 
-        // Envoie le cookie de session
         setcookie('sid', $sessionId, [
             'expires' => time() + (int)(SESSION_DURATION_HOURS * 3600),
             'path' => '/',
-            'domain' => '.shinederu.ch', // partage sous-domaines
+            'domain' => '.shinederu.ch',
             'secure' => true,
             'httponly' => true,
             'samesite' => 'Lax',
@@ -175,11 +171,10 @@ class AuthController
     }
 
     /**
-     * DÃ©connexion
+     * Déconnexion
      */
-    public function logout(array $data = [], int $userId)
+    public function logout(array $data, int $userId)
     {
-        // RÃ©cupÃ¨re l'id de session courant (cookie ou header)
         $sessionId = getSessionId();
         if (!$sessionId) {
             json_error('Session introuvable', 401);
@@ -188,52 +183,47 @@ class AuthController
         $sessionService = new SessionService();
         $sessionService->deleteSession($sessionId);
 
-        // Supprime les cookies de session (nouveau et legacy)
         setcookie('sid', '', time() - 3600, '/', '.shinederu.ch', true, true);
         setcookie('session_id', '', time() - 3600, '/', '.shinederu.ch', true, true);
 
-        json_success('DÃ©connexion rÃ©ussie');
+        json_success('Déconnexion réussie');
     }
 
     /**
-     * DÃ©connexion de tous les appareils
+     * Déconnexion de tous les appareils
      */
-    public function logoutAll(array $data = [], int $userId)
+    public function logoutAll(array $data, int $userId)
     {
         $sessionService = new SessionService();
-
         $sessionService->deleteAllSessionsForUser($userId);
 
-        // Supprime les cookies de session (nouveau et legacy)
         setcookie('sid', '', time() - 3600, '/', '.shinederu.ch', true, true);
         setcookie('session_id', '', time() - 3600, '/', '.shinederu.ch', true, true);
 
-        json_success('DÃ©connexion de tous les appareils rÃ©ussie');
+        json_success('Déconnexion de tous les appareils réussie');
     }
 
     /**
-     * Demande de reset mot de passe (envoi du mail)
+     * Demande de réinitialisation du mot de passe
      */
     public function requestPasswordReset(array $data = [])
     {
         $input = sanitizeEmailInput($data);
         $email = $input['email'];
         if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            json_error('Eâ€‘mail invalide', 400);
+            json_error('E-mail invalide', 400);
         }
 
         $auth = new AuthService();
         $user = $auth->getUserByEmail($email);
 
-        // Toujours rÃ©pondre OK mÃªme si l'utilisateur n'existe pas (Ã©vite de leak qui est inscrit !)
         if (!$user) {
-            json_success('Si un compte existe, un eâ€‘mail a Ã©tÃ© envoyÃ©.');
+            json_success('Si un compte existe, un e-mail a été envoyé.');
         }
 
         $token = $auth->createPasswordResetToken($user['id']);
         $resetLink = "https://shinederu.ch/newPassword?token=$token";
 
-        // Envoie le mail
         MailService::send(
             $email,
             'password_reset_request',
@@ -242,7 +232,7 @@ class AuthController
             ]
         );
 
-        json_success('Si un compte existe, un eâ€‘mail a Ã©tÃ© envoyÃ©.');
+        json_success('Si un compte existe, un e-mail a été envoyé.');
     }
 
     /**
@@ -250,7 +240,6 @@ class AuthController
      */
     public function resetPassword(array $data = [])
     {
-        // RÃ©cupÃ¨re le token et le nouveau mot de passe
         $token = sanitizeVerifyEmailInput($data)['token'];
 
         $password = $data['password'];
@@ -263,11 +252,11 @@ class AuthController
         $auth = new AuthService();
         $userId = $auth->verifyPasswordResetToken($token);
         if (!$userId) {
-            json_error('Lien invalide ou expirÃ©', 400);
+            json_error('Lien invalide ou expiré', 400);
         }
 
         if (strlen($password) < 8) {
-            json_error('Le mot de passe doit faire au moins 8 caractÃ¨res', 400);
+            json_error('Le mot de passe doit faire au moins 8 caractères', 400);
         }
 
         if ($password !== $passwordConfirm) {
@@ -280,28 +269,26 @@ class AuthController
         $sessionService = new SessionService();
         $sessionService->deleteAllSessionsForUser($userId);
 
-        json_success('Mot de passe rÃ©initialisÃ© avec succÃ¨s !');
+        json_success('Mot de passe réinitialisé avec succès !');
     }
 
     /**
-     * Demande de mise Ã  jour de l'e-mail
-     * Envoie un mail de confirmation Ã  la nouvelle adresse
+     * Demande de mise à jour de l'e-mail
      */
     public function requestEmailUpdate(array $data, $userId)
     {
         $newEmail = sanitizeEmailInput($data)['email'];
         if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
-            json_error('Eâ€‘mail invalide', 400);
+            json_error('E-mail invalide', 400);
         }
 
         $authService = new AuthService();
         if ($authService->userOrEmailExists('', $newEmail)) {
-            json_error('Eâ€‘mail dÃ©jÃ  utilisÃ©', 409);
+            json_error('E-mail déjà utilisé', 409);
         }
 
         $oldEmail = $authService->getEmailByUserId($userId);
 
-        // GÃ©nÃ¨re un token de vÃ©rification email liÃ© Ã  lâ€™update
         $token = $authService->createEmailVerificationToken($userId, $newEmail);
         $link = "https://shinederu.ch/newEmail?token=$token&action=confirmEmailUpdate";
         $link2 = "https://shinederu.ch/newEmail?token=$token&action=revokeEmailUpdate";
@@ -323,7 +310,7 @@ class AuthController
             ]
         );
 
-        json_success('Un eâ€‘mail de confirmation a Ã©tÃ© envoyÃ© Ã  la nouvelle adresse.');
+        json_success('Un e-mail de confirmation a été envoyé à la nouvelle adresse.');
     }
 
     public function confirmEmailUpdate(array $data)
@@ -334,16 +321,13 @@ class AuthController
         $record = $authService->getEmailVerificationToken($token);
 
         if (!$record || strtotime($record['expires_at']) < time() || empty($record['new_email'])) {
-            json_error('Lien invalide ou expirÃ©', 400);
+            json_error('Lien invalide ou expiré', 400);
         }
 
-        // Update lâ€™eâ€‘mail en base
         $authService->updateUserEmail($record['user_id'], $record['new_email']);
-
-        // Supprime le token
         $authService->consumeEmailVerificationToken($token);
 
-        json_success('Adresse eâ€‘mail modifiÃ©e et confirmÃ©e !');
+        json_success('Adresse e-mail modifiée et confirmée !');
     }
 
     public function revokeEmailUpdate($data)
@@ -353,12 +337,12 @@ class AuthController
         $record = $authService->getEmailVerificationToken($token);
 
         if (!$record || strtotime($record['expires_at']) < time() || empty($record['new_email'])) {
-            json_error('Lien invalide ou expirÃ©', 400);
+            json_error('Lien invalide ou expiré', 400);
         }
 
         $authService->consumeEmailVerificationToken($token);
 
-        json_success("Changement dâ€™adresse eâ€‘mail annulÃ©.");
+        json_success("Changement d'adresse e-mail annulé.");
     }
 
     public function me($userId)
@@ -367,10 +351,9 @@ class AuthController
         $user = $authService->getUserById($userId);
 
         if (!$user) {
-            json_error('Utilisateur non trouvÃ©', 404);
+            json_error('Utilisateur non trouvé', 404);
         }
 
-        // On filtre les infos sensibles avant de renvoyer
         unset($user['password_hash']);
         $user['is_admin'] = (bool)($user['is_admin'] ?? false);
 
