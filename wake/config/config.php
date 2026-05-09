@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../utils/response.php';
 require_once __DIR__ . '/../utils/request.php';
+require_once __DIR__ . '/../utils/logger.php';
 
 function load_dotenv(string $path): void
 {
@@ -69,6 +70,8 @@ define('AUTH_API_BASE', env('AUTH_API_BASE', 'https://api.shinederu.ch/auth/'));
 define('AUTH_PORTAL_URL', env('AUTH_PORTAL_URL', 'https://auth.shinederu.ch'));
 define('WAKE_DEFAULT_BROADCAST', env('WAKE_DEFAULT_BROADCAST', '255.255.255.255'));
 define('WAKE_DEFAULT_PORT', (int)env('WAKE_DEFAULT_PORT', '9'));
+define('WAKE_LOG_ENABLED', to_bool(env('WAKE_LOG_ENABLED', '1')));
+define('WAKE_LOG_FILE', env('WAKE_LOG_FILE', $projectRoot . '/logs/wake.log'));
 
 define('DB_TYPE', env('MQ_DB_TYPE', env('DB_TYPE', 'mysql')));
 define('DB_HOST', env('MQ_DB_HOST', env('DB_HOST', '127.0.0.1')));

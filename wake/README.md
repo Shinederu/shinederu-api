@@ -62,7 +62,29 @@ Variables principales:
 - `AUTH_API_BASE`
 - `WAKE_DEFAULT_BROADCAST`
 - `WAKE_DEFAULT_PORT`
+- `WAKE_LOG_ENABLED`
+- `WAKE_LOG_FILE`
 - `DB_*`
+
+## Logs WOL
+
+Chaque tentative de reveil ecrit un `request_id` et un evenement detaille:
+
+- `wake_attempt_started`
+- `wake_packet_sent`
+- `wake_attempt_succeeded`
+- `wake_attempt_failed`
+
+Par defaut, l'API tente aussi d'ecrire un fichier local:
+
+- `API/wake/logs/wake.log`
+
+Si le dossier n'est pas writable par PHP, les traces restent visibles dans le `error_log` PHP/FPM.
+
+## Format MAC
+
+Les adresses MAC peuvent etre saisies avec `-`, `:` ou sans separateur.
+Avant l'envoi, l'API retire tous les separateurs et construit le Magic Packet a partir de 12 caracteres hexadecimaux.
 
 ## Verification locale
 

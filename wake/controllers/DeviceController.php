@@ -26,7 +26,7 @@ class DeviceController
 
     public function wakeDevice(array $data): void
     {
-        AuthMiddleware::requireWakeAccess();
+        $auth = AuthMiddleware::requireWakeAccess();
 
         $deviceId = isset($data['deviceId']) ? (int)$data['deviceId'] : 0;
         if ($deviceId <= 0) {
@@ -45,16 +45,43 @@ class DeviceController
         }
 
         $wakeService = new WakeService();
-        $wakeService->sendMagicPacket(
-            $device['mac_address'],
-            $device['broadcast_address'] !== '' ? $device['broadcast_address'] : WAKE_DEFAULT_BROADCAST,
-            $device['port']
-        );
+        $logContext = [
+            'device_id' => $deviceId,
+            'device_name' => $device['name'],
+            'target_ip' => $device['target_ip'],
+            'broadcast_address' => $device['broadcast_address'] !== '' ? $device['broadcast_address'] : WAKE_DEFAULT_BROADCAST,
+            'port' => $device['port'],
+            'requested_by_user_id' => isset($auth['user']['id']) ? (int)$auth['user']['id'] : null,
+            'requested_by_username' => $auth['user']['username'] ?? null,
+        ];
 
+        wake_log('wake_attempt_started', $logContext + [
+            'mac_address_input' => $device['mac_address'],
+        ]);
+
+        try {
+            $sendResult = $wakeService->sendMagicPacket(
+                $device['mac_address'],
+                $device['broadcast_address'] !== '' ? $device['broadcast_address'] : WAKE_DEFAULT_BROADCAST,
+                $device['port']
+            );
+        } catch (Throwable $exception) {
+            wake_log_exception('wake_attempt_failed', $exception, $logContext + [
+                'mac_address_input' => $device['mac_address'],
+            ]);
+
+            json_error('Le Magic Packet n\'a pas pu etre envoye.', 500, [
+                'trace_id' => wake_request_id(),
+            ]);
+        }
+
+        wake_log('wake_packet_sent', $logContext + $sendResult);
         $deviceService->touchLastWakeAt($deviceId);
+        wake_log('wake_attempt_succeeded', $logContext + $sendResult);
 
         json_success('Magic packet envoye.', [
             'device' => $deviceService->getDeviceById($deviceId),
+            'trace_id' => wake_request_id(),
         ]);
     }
 

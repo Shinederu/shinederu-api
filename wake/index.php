@@ -66,11 +66,27 @@ try {
             json_error('Methode non autorisee.', 405);
     }
 } catch (InvalidArgumentException $exception) {
+    wake_log_exception('wake_invalid_argument', $exception, [
+        'method' => $method,
+        'action' => $action,
+    ]);
     json_error($exception->getMessage(), 400);
 } catch (PDOException $exception) {
+    wake_log_exception('wake_database_error', $exception, [
+        'method' => $method,
+        'action' => $action,
+    ]);
     json_error('Erreur SQL pendant le traitement de la requete.', 500);
 } catch (RuntimeException $exception) {
+    wake_log_exception('wake_runtime_error', $exception, [
+        'method' => $method,
+        'action' => $action,
+    ]);
     json_error($exception->getMessage(), 500);
 } catch (Throwable $exception) {
+    wake_log_exception('wake_unexpected_error', $exception, [
+        'method' => $method,
+        'action' => $action,
+    ]);
     json_error('Erreur applicative inattendue.', 500);
 }
