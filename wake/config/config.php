@@ -80,7 +80,7 @@ define('DB_PASS', env('MQ_DB_PASS', env('DB_PASS', '')));
 function apply_cors(): void
 {
     $origin = trim((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
-    $allowedOrigins = array_filter(array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', 'https://wake.shinederu.ch,https://shinederu.ch,http://localhost:5173,http://127.0.0.1:5173'))));
+    $allowedOrigins = array_filter(array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173'))));
 
     if ($origin !== '' && in_array($origin, $allowedOrigins, true)) {
         header('Access-Control-Allow-Origin: ' . $origin);
