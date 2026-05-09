@@ -63,7 +63,8 @@ class DeviceController
             $sendResult = $wakeService->sendMagicPacket(
                 $device['mac_address'],
                 $device['broadcast_address'] !== '' ? $device['broadcast_address'] : WAKE_DEFAULT_BROADCAST,
-                $device['port']
+                $device['port'],
+                $device['target_ip']
             );
         } catch (Throwable $exception) {
             wake_log_exception('wake_attempt_failed', $exception, $logContext + [

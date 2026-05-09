@@ -3,13 +3,23 @@ declare(strict_types=1);
 
 class WakeService
 {
-    public function sendMagicPacket(string $macAddress, string $broadcastAddress = '', int $port = WAKE_DEFAULT_PORT): array
+    public function sendMagicPacket(
+        string $macAddress,
+        string $broadcastAddress = '',
+        int $port = WAKE_DEFAULT_PORT,
+        string $targetIp = ''
+    ): array
     {
         $cleanMac = $this->normalizeMacAddress($macAddress);
 
         $broadcastAddress = trim($broadcastAddress) !== '' ? trim($broadcastAddress) : WAKE_DEFAULT_BROADCAST;
         if (filter_var($broadcastAddress, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false) {
             throw new InvalidArgumentException('Adresse de broadcast invalide.');
+        }
+
+        $targetIp = trim($targetIp);
+        if ($targetIp !== '' && filter_var($targetIp, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false) {
+            throw new InvalidArgumentException('Adresse IP cible invalide.');
         }
 
         if ($port < 1 || $port > 65535) {
@@ -21,14 +31,41 @@ class WakeService
             throw new RuntimeException('Impossible de generer le Magic Packet.');
         }
 
-        if (function_exists('socket_create')) {
-            $bytesSent = $this->sendWithSocketExtension($packet, $broadcastAddress, $port);
-            return $this->buildResult($cleanMac, $broadcastAddress, $port, 'socket', $packet, $bytesSent);
+        $destinations = $this->buildDestinations($targetIp, $broadcastAddress);
+        $transport = function_exists('socket_create') ? 'socket' : 'stream';
+        $successfulDestinations = [];
+        $failedDestinations = [];
+
+        foreach ($destinations as $destination) {
+            try {
+                $bytesSent = $transport === 'socket'
+                    ? $this->sendWithSocketExtension($packet, $destination['address'], $port)
+                    : $this->sendWithStreamSocket($packet, $destination['address'], $port);
+
+                $successfulDestinations[] = [
+                    'label' => $destination['label'],
+                    'address' => $destination['address'],
+                    'bytes_sent' => $bytesSent,
+                ];
+            } catch (Throwable $exception) {
+                $failedDestinations[] = [
+                    'label' => $destination['label'],
+                    'address' => $destination['address'],
+                    'error' => $exception->getMessage(),
+                ];
+            }
         }
 
-        $bytesSent = $this->sendWithStreamSocket($packet, $broadcastAddress, $port);
+        if ($successfulDestinations === []) {
+            $errors = array_map(
+                static fn(array $entry): string => $entry['label'] . ' ' . $entry['address'] . ' -> ' . $entry['error'],
+                $failedDestinations
+            );
 
-        return $this->buildResult($cleanMac, $broadcastAddress, $port, 'stream', $packet, $bytesSent);
+            throw new RuntimeException('Aucun envoi WOL n\'a abouti. ' . implode(' | ', $errors));
+        }
+
+        return $this->buildResult($cleanMac, $port, $transport, $packet, $successfulDestinations, $failedDestinations);
     }
 
     private function sendWithSocketExtension(string $packet, string $broadcastAddress, int $port): int
@@ -104,15 +141,46 @@ class WakeService
         return strtoupper($cleanMac);
     }
 
-    private function buildResult(string $cleanMac, string $broadcastAddress, int $port, string $transport, string $packet, int $bytesSent): array
+    private function buildDestinations(string $targetIp, string $broadcastAddress): array
+    {
+        $destinations = [];
+        $seen = [];
+
+        $append = static function (array &$items, array &$known, string $label, string $address): void {
+            if ($address === '' || isset($known[$address])) {
+                return;
+            }
+
+            $known[$address] = true;
+            $items[] = [
+                'label' => $label,
+                'address' => $address,
+            ];
+        };
+
+        $append($destinations, $seen, 'target_ip', $targetIp);
+        $append($destinations, $seen, 'broadcast', $broadcastAddress);
+        $append($destinations, $seen, 'global_broadcast', '255.255.255.255');
+
+        return $destinations;
+    }
+
+    private function buildResult(
+        string $cleanMac,
+        int $port,
+        string $transport,
+        string $packet,
+        array $successfulDestinations,
+        array $failedDestinations
+    ): array
     {
         return [
             'normalized_mac' => implode(':', str_split($cleanMac, 2)),
-            'broadcast_address' => $broadcastAddress,
             'port' => $port,
             'transport' => $transport,
             'packet_size' => strlen($packet),
-            'bytes_sent' => $bytesSent,
+            'destinations' => $successfulDestinations,
+            'failed_destinations' => $failedDestinations,
         ];
     }
 }
