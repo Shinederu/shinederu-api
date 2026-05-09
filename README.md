@@ -8,6 +8,7 @@ Backends des projets Shinederu et configuration de deploiement API.
 - `melodyquest/` : backend MelodyQuest
 - `main-site/` : backend du site principal (annonces, contenus dynamiques)
 - `box/` : backend ShinedeBox (gestion fichiers admin)
+- `wake/` : backend Wake-on-LAN dedie a ShinedeWake
 - `index.html` : page statique de base
 - `Nginx Configuration File.txt` : exemple de configuration Nginx
 
@@ -18,6 +19,7 @@ Backends des projets Shinederu et configuration de deploiement API.
 - MelodyQuest: `API/melodyquest/index.php` -> `https://api.shinederu.ch/melodyquest/`
 - Main site: `API/main-site/index.php` -> `https://api.shinederu.ch/main-site/`
 - Box: `API/box/*.php` -> `https://api.shinederu.ch/box/`
+- Wake: `API/wake/index.php` -> `https://api.shinederu.ch/wake/`
 
 ## CORS et domaines
 
@@ -32,6 +34,7 @@ Les projets utilisent la meme instance MySQL et le meme schema partage:
 - `melodyquest/` -> schema partage (credentials `MQ_DB_*`)
 - `main-site/` -> schema partage (credentials `DB_*`)
 - `box/` -> schema partage (credentials `DB_*` ou `MQ_DB_*`)
+- `wake/` -> schema partage (credentials `DB_*` ou `MQ_DB_*`)
 
 Les identifiants techniques peuvent differer (`DB_*` / `MQ_DB_*`), mais pointent vers le meme schema.
 
