@@ -2,7 +2,7 @@
 
 Backend Wake-on-LAN dedie a ShinedeWake, expose sous:
 
-- `https://api.shinederu.ch/wake/`
+- `https://api.shinederu.ch/wake/index.php`
 
 ## Objectif
 
