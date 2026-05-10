@@ -74,6 +74,7 @@ Variables principales:
 - `WAKE_LOG_FILE`
 - `WAKE_PING_ENABLED`
 - `WAKE_PING_TIMEOUT_SECONDS`
+- `WAKE_PING_COMMAND`
 - `DB_*`
 
 ## Logs WOL

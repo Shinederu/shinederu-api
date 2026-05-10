@@ -19,9 +19,30 @@ class DeviceController
     {
         $auth = AuthMiddleware::requireWakeAccess();
         $deviceService = new DeviceService();
+        $devices = $deviceService->listDevices($auth['can_manage']);
+
+        $unknownDevices = array_values(array_filter(
+            $devices,
+            static fn(array $device): bool => ($device['power_state'] ?? '') === 'unknown'
+        ));
+
+        if ($unknownDevices !== []) {
+            wake_log('wake_power_state_unknown', [
+                'count' => count($unknownDevices),
+                'devices' => array_map(
+                    static fn(array $device): array => [
+                        'id' => $device['id'] ?? null,
+                        'name' => $device['name'] ?? null,
+                        'target_ip' => $device['target_ip'] ?? null,
+                        'reason' => $device['power_state_reason'] ?? null,
+                    ],
+                    $unknownDevices
+                ),
+            ]);
+        }
 
         json_success(null, [
-            'devices' => $deviceService->listDevices($auth['can_manage']),
+            'devices' => $devices,
         ]);
     }
 
