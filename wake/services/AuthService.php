@@ -82,6 +82,68 @@ class AuthService
         return $status;
     }
 
+    public function listWakeUsers(): array
+    {
+        $rows = $this->fetchWakeUsers();
+
+        return array_map(fn(array $row) => $this->mapWakeUser($row), $rows);
+    }
+
+    public function updateWakeUserPermissions(int $userId, bool $canWake, bool $canManage, ?int $grantedByUserId = null): array
+    {
+        $user = $this->findWakeUserById($userId);
+        if ($user === null) {
+            throw new InvalidArgumentException('Utilisateur introuvable.');
+        }
+
+        if ($user['is_global_admin']) {
+            throw new InvalidArgumentException('Les admins globaux disposent deja de l\'acces complet.');
+        }
+
+        $this->ensurePermissionsTableAvailable();
+
+        if ($canManage) {
+            $canWake = true;
+        }
+
+        if (!$canWake && !$canManage) {
+            $statement = $this->db->prepare('DELETE FROM wake_user_permissions WHERE user_id = :user_id');
+            $statement->execute([
+                'user_id' => $userId,
+            ]);
+
+            $updatedUser = $this->findWakeUserById($userId);
+            if ($updatedUser === null) {
+                throw new RuntimeException('Utilisateur introuvable apres suppression des permissions.');
+            }
+
+            return $updatedUser;
+        }
+
+        $statement = $this->db->prepare(
+            'INSERT INTO wake_user_permissions (user_id, can_wake, can_manage, granted_by_user_id)
+             VALUES (:user_id, :can_wake, :can_manage, :granted_by_user_id)
+             ON DUPLICATE KEY UPDATE
+                can_wake = VALUES(can_wake),
+                can_manage = VALUES(can_manage),
+                granted_by_user_id = VALUES(granted_by_user_id),
+                updated_at = CURRENT_TIMESTAMP'
+        );
+        $statement->execute([
+            'user_id' => $userId,
+            'can_wake' => $canWake ? 1 : 0,
+            'can_manage' => $canManage ? 1 : 0,
+            'granted_by_user_id' => $grantedByUserId,
+        ]);
+
+        $updatedUser = $this->findWakeUserById($userId);
+        if ($updatedUser === null) {
+            throw new RuntimeException('Utilisateur introuvable apres mise a jour des permissions.');
+        }
+
+        return $updatedUser;
+    }
+
     private function findUserBySessionId(string $sessionId): ?array
     {
         if ($this->hasUsersIsAdminColumn()) {
@@ -130,6 +192,137 @@ class AuthService
             'can_wake' => to_bool($row['can_wake'] ?? 0),
             'can_manage' => to_bool($row['can_manage'] ?? 0),
         ];
+    }
+
+    private function fetchWakeUsers(): array
+    {
+        $selectIsAdmin = $this->hasUsersIsAdminColumn() ? 'u.is_admin' : 'NULL AS is_admin';
+
+        if ($this->hasPermissionsTable()) {
+            $sql = 'SELECT u.id,
+                           u.username,
+                           u.email,
+                           u.role,
+                           ' . $selectIsAdmin . ',
+                           u.created_at,
+                           CASE WHEN p.user_id IS NULL THEN 0 ELSE 1 END AS has_dedicated_entry,
+                           COALESCE(p.can_wake, 0) AS can_wake,
+                           COALESCE(p.can_manage, 0) AS can_manage,
+                           p.granted_by_user_id,
+                           p.created_at AS permission_created_at,
+                           p.updated_at AS permission_updated_at
+                    FROM users u
+                    LEFT JOIN wake_user_permissions p ON p.user_id = u.id
+                    ORDER BY u.username ASC, u.email ASC, u.id ASC';
+        } else {
+            $sql = 'SELECT u.id,
+                           u.username,
+                           u.email,
+                           u.role,
+                           ' . $selectIsAdmin . ',
+                           u.created_at,
+                           0 AS has_dedicated_entry,
+                           0 AS can_wake,
+                           0 AS can_manage,
+                           NULL AS granted_by_user_id,
+                           NULL AS permission_created_at,
+                           NULL AS permission_updated_at
+                    FROM users u
+                    ORDER BY u.username ASC, u.email ASC, u.id ASC';
+        }
+
+        $statement = $this->db->query($sql);
+        $rows = $statement->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    private function findWakeUserById(int $userId): ?array
+    {
+        $selectIsAdmin = $this->hasUsersIsAdminColumn() ? 'u.is_admin' : 'NULL AS is_admin';
+
+        if ($this->hasPermissionsTable()) {
+            $sql = 'SELECT u.id,
+                           u.username,
+                           u.email,
+                           u.role,
+                           ' . $selectIsAdmin . ',
+                           u.created_at,
+                           CASE WHEN p.user_id IS NULL THEN 0 ELSE 1 END AS has_dedicated_entry,
+                           COALESCE(p.can_wake, 0) AS can_wake,
+                           COALESCE(p.can_manage, 0) AS can_manage,
+                           p.granted_by_user_id,
+                           p.created_at AS permission_created_at,
+                           p.updated_at AS permission_updated_at
+                    FROM users u
+                    LEFT JOIN wake_user_permissions p ON p.user_id = u.id
+                    WHERE u.id = :user_id
+                    LIMIT 1';
+        } else {
+            $sql = 'SELECT u.id,
+                           u.username,
+                           u.email,
+                           u.role,
+                           ' . $selectIsAdmin . ',
+                           u.created_at,
+                           0 AS has_dedicated_entry,
+                           0 AS can_wake,
+                           0 AS can_manage,
+                           NULL AS granted_by_user_id,
+                           NULL AS permission_created_at,
+                           NULL AS permission_updated_at
+                    FROM users u
+                    WHERE u.id = :user_id
+                    LIMIT 1';
+        }
+
+        $statement = $this->db->prepare($sql);
+        $statement->execute([
+            'user_id' => $userId,
+        ]);
+        $row = $statement->fetch();
+
+        return is_array($row) ? $this->mapWakeUser($row) : null;
+    }
+
+    private function mapWakeUser(array $row): array
+    {
+        $isGlobalAdmin = to_bool($row['is_admin'] ?? null) || strtolower((string)($row['role'] ?? '')) === 'admin';
+        $hasDedicatedEntry = to_bool($row['has_dedicated_entry'] ?? 0);
+        $dedicatedCanWake = to_bool($row['can_wake'] ?? 0);
+        $dedicatedCanManage = to_bool($row['can_manage'] ?? 0);
+        $effectiveCanWake = $isGlobalAdmin || $dedicatedCanWake || $dedicatedCanManage;
+        $effectiveCanManage = $isGlobalAdmin || $dedicatedCanManage;
+        $permissionLevel = $effectiveCanManage ? 'manage' : ($effectiveCanWake ? 'wake' : 'none');
+        $permissionSource = $isGlobalAdmin ? 'global_admin' : ($hasDedicatedEntry ? 'dedicated' : 'none');
+
+        return [
+            'id' => (int)$row['id'],
+            'username' => (string)($row['username'] ?? ''),
+            'email' => (string)($row['email'] ?? ''),
+            'role' => $isGlobalAdmin ? 'admin' : (string)($row['role'] ?? 'user'),
+            'is_global_admin' => $isGlobalAdmin,
+            'has_dedicated_entry' => $hasDedicatedEntry,
+            'can_wake' => $dedicatedCanWake,
+            'can_manage' => $dedicatedCanManage,
+            'effective_can_wake' => $effectiveCanWake,
+            'effective_can_manage' => $effectiveCanManage,
+            'permission_level' => $permissionLevel,
+            'permission_source' => $permissionSource,
+            'granted_by_user_id' => $row['granted_by_user_id'] !== null ? (int)$row['granted_by_user_id'] : null,
+            'permission_created_at' => $row['permission_created_at'] !== null ? (string)$row['permission_created_at'] : null,
+            'permission_updated_at' => $row['permission_updated_at'] !== null ? (string)$row['permission_updated_at'] : null,
+            'created_at' => (string)($row['created_at'] ?? ''),
+        ];
+    }
+
+    private function ensurePermissionsTableAvailable(): void
+    {
+        if ($this->hasPermissionsTable()) {
+            return;
+        }
+
+        throw new RuntimeException('La table wake_user_permissions est absente.');
     }
 
     private function hasUsersIsAdminColumn(): bool

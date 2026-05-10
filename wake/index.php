@@ -21,6 +21,9 @@ try {
                 case 'listDevices':
                     $controller->listDevices();
                     break;
+                case 'listUsers':
+                    $controller->listUsers();
+                    break;
                 default:
                     json_error('Action GET inconnue.', 404);
             }
@@ -45,6 +48,10 @@ try {
                 case 'updateDevice':
                     AuthMiddleware::requireWakeManagement();
                     $controller->updateDevice($body);
+                    break;
+                case 'updateUserPermissions':
+                    $auth = AuthMiddleware::requireWakeManagement();
+                    $controller->updateUserPermissions($body, $auth);
                     break;
                 default:
                     json_error('Action PUT inconnue.', 404);

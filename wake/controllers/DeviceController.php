@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../middlewares/AuthMiddleware.php';
+require_once __DIR__ . '/../services/AuthService.php';
 require_once __DIR__ . '/../services/DeviceService.php';
 require_once __DIR__ . '/../services/WakeService.php';
 
@@ -21,6 +22,17 @@ class DeviceController
 
         json_success(null, [
             'devices' => $deviceService->listDevices($auth['can_manage']),
+        ]);
+    }
+
+    public function listUsers(): void
+    {
+        AuthMiddleware::requireWakeManagement();
+
+        $authService = new AuthService();
+
+        json_success(null, [
+            'users' => $authService->listWakeUsers(),
         ]);
     }
 
@@ -108,6 +120,41 @@ class DeviceController
 
         json_success('Machine mise a jour.', [
             'device' => $device,
+        ]);
+    }
+
+    public function updateUserPermissions(array $data, array $auth): void
+    {
+        $userId = isset($data['userId']) ? (int)$data['userId'] : 0;
+        if ($userId <= 0) {
+            json_error('Utilisateur cible invalide.', 400);
+        }
+
+        $canWake = to_bool($data['can_wake'] ?? false);
+        $canManage = to_bool($data['can_manage'] ?? false);
+
+        $authService = new AuthService();
+        $user = $authService->updateWakeUserPermissions(
+            $userId,
+            $canWake,
+            $canManage,
+            isset($auth['user']['id']) ? (int)$auth['user']['id'] : null
+        );
+
+        wake_log('wake_user_permission_updated', [
+            'target_user_id' => $userId,
+            'target_username' => $user['username'],
+            'can_wake' => $user['can_wake'],
+            'can_manage' => $user['can_manage'],
+            'effective_can_wake' => $user['effective_can_wake'],
+            'effective_can_manage' => $user['effective_can_manage'],
+            'permission_source' => $user['permission_source'],
+            'updated_by_user_id' => isset($auth['user']['id']) ? (int)$auth['user']['id'] : null,
+            'updated_by_username' => $auth['user']['username'] ?? null,
+        ]);
+
+        json_success('Permissions utilisateur mises a jour.', [
+            'user' => $user,
         ]);
     }
 

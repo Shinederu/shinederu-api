@@ -27,6 +27,8 @@ Droit de gestion requis:
 - `POST ?action=createDevice`
 - `PUT ?action=updateDevice`
 - `DELETE ?action=deleteDevice`
+- `GET ?action=listUsers`
+- `PUT ?action=updateUserPermissions`
 
 ## Tables dediees
 
@@ -37,6 +39,12 @@ La migration `sql/001_wake_core.sql` cree:
 
 Les comptes admin globaux (`users.is_admin = 1` ou `users.role = 'admin'`) disposent d'un acces complet implicite.
 Pour les autres comptes, les droits sont portes par `wake_user_permissions`.
+
+Niveaux de permission utilises par le panel:
+
+- `none`: aucun acces
+- `wake`: acces au panel + envoi de magic packet
+- `manage`: acces WOL + gestion des machines + gestion des utilisateurs
 
 Exemple d'autorisation explicite pour un compte non-admin:
 
