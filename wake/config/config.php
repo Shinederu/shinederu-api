@@ -72,6 +72,8 @@ define('WAKE_DEFAULT_BROADCAST', env('WAKE_DEFAULT_BROADCAST', '255.255.255.255'
 define('WAKE_DEFAULT_PORT', (int)env('WAKE_DEFAULT_PORT', '9'));
 define('WAKE_LOG_ENABLED', to_bool(env('WAKE_LOG_ENABLED', '1')));
 define('WAKE_LOG_FILE', env('WAKE_LOG_FILE', $projectRoot . '/logs/wake.log'));
+define('WAKE_PING_ENABLED', to_bool(env('WAKE_PING_ENABLED', '1')));
+define('WAKE_PING_TIMEOUT_SECONDS', max(1, (int)env('WAKE_PING_TIMEOUT_SECONDS', '1')));
 
 define('DB_TYPE', env('MQ_DB_TYPE', env('DB_TYPE', 'mysql')));
 define('DB_HOST', env('MQ_DB_HOST', env('DB_HOST', '127.0.0.1')));

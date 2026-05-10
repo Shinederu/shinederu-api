@@ -2,14 +2,17 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/DatabaseService.php';
+require_once __DIR__ . '/PingService.php';
 
 class DeviceService
 {
     private PDO $db;
+    private PingService $pingService;
 
     public function __construct()
     {
         $this->db = DatabaseService::getInstance();
+        $this->pingService = new PingService();
     }
 
     public function listDevices(bool $includeDisabled = true): array
@@ -30,7 +33,7 @@ class DeviceService
             return [];
         }
 
-        return array_map(fn(array $row) => $this->mapDevice($row), $rows);
+        return array_map(fn(array $row) => $this->hydrateDeviceState($this->mapDevice($row)), $rows);
     }
 
     public function getDeviceById(int $deviceId): ?array
@@ -44,7 +47,7 @@ class DeviceService
         $statement->execute(['id' => $deviceId]);
         $row = $statement->fetch();
 
-        return is_array($row) ? $this->mapDevice($row) : null;
+        return is_array($row) ? $this->hydrateDeviceState($this->mapDevice($row)) : null;
     }
 
     public function createDevice(array $input, ?int $createdByUserId = null): array
@@ -225,5 +228,10 @@ class DeviceService
             'created_at' => (string)($row['created_at'] ?? ''),
             'updated_at' => (string)($row['updated_at'] ?? ''),
         ];
+    }
+
+    private function hydrateDeviceState(array $device): array
+    {
+        return $device + $this->pingService->getPowerState($device['target_ip'] ?? '');
     }
 }
