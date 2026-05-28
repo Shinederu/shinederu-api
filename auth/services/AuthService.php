@@ -1,11 +1,13 @@
 <?php
 require_once __DIR__ . '/DatabaseService.php';
 require_once __DIR__ . '/TokenService.php';
+require_once __DIR__ . '/../../core/services/ProjectAccessService.php';
 
 class AuthService
 {
     private $db;
     private ?bool $hasIsAdminColumn = null;
+    private ?ProjectAccessService $projectAccess = null;
 
     public function __construct()
     {
@@ -172,8 +174,7 @@ class AuthService
 
     public function isUserAdmin(int $userId): bool
     {
-        $user = $this->getUserById($userId);
-        return (bool)($user['is_admin'] ?? false);
+        return $this->projectAccess()->hasPermission($userId, 'auth', 'users.manage');
     }
 
     public function listUsersForAdmin(): array
@@ -212,7 +213,13 @@ class AuthService
 
         $this->db->update('users', $payload, ['id' => $userId]);
 
-        return $this->db->error === null;
+        if ($this->db->error !== null) {
+            return false;
+        }
+
+        $this->syncGlobalAdminRole($userId, $role === 'admin');
+
+        return true;
     }
 
 
@@ -353,10 +360,36 @@ class AuthService
         }
 
         $isAdmin = $this->toBool($user['is_admin'] ?? null) || strtolower((string)($user['role'] ?? '')) === 'admin';
+        if (!$isAdmin && isset($user['id'])) {
+            $isAdmin = $this->projectAccess()->isGlobalAdmin((int)$user['id']);
+        }
         $user['is_admin'] = $isAdmin;
         $user['role'] = $isAdmin ? 'admin' : 'user';
 
         return $user;
+    }
+
+    private function projectAccess(): ProjectAccessService
+    {
+        if ($this->projectAccess === null) {
+            $this->projectAccess = new ProjectAccessService();
+        }
+
+        return $this->projectAccess;
+    }
+
+    private function syncGlobalAdminRole(int $userId, bool $isAdmin): void
+    {
+        try {
+            $this->projectAccess()->setUserProjectRoles(
+                $userId,
+                'core',
+                $isAdmin ? ['super_admin'] : [],
+                null
+            );
+        } catch (Throwable $e) {
+            // Core access tables may not exist during a rolling migration. The legacy users.role value remains authoritative.
+        }
     }
 
 

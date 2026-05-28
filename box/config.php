@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 // Shared config + helpers for API endpoints
+require_once __DIR__ . '/../core/services/ProjectAccessService.php';
 
 function load_dotenv(string $path): void
 {
@@ -217,7 +218,8 @@ function get_current_auth_state(): array
     }
 
     $role = strtolower((string)($row['role'] ?? ''));
-    $isAdmin = to_bool($row['is_admin'] ?? null) || $role === 'admin';
+    $accessService = new ProjectAccessService($pdo);
+    $isAdmin = $accessService->hasPermission((int)$row['id'], 'box', 'files.manage');
 
     return [
         'authenticated' => true,

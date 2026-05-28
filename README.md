@@ -41,6 +41,7 @@ Les identifiants techniques peuvent differer (`DB_*` / `MQ_DB_*`), mais pointent
 Convention de nommage:
 
 - `users` reste la table centrale partagee.
+- Les droits applicatifs centralises utilisent les tables `core_*`.
 - Les tables Auth utilisent le prefixe `auth_` (`auth_sessions`, `auth_password_reset_tokens`, `auth_email_verification_tokens`).
 - Les tables du site principal utilisent le prefixe `main_` (`main_announcements`).
 - MelodyQuest conserve le prefixe `mq_`.
@@ -48,6 +49,7 @@ Convention de nommage:
 
 Migrations de nommage/alignment:
 
+- `core/sql/001_core_project_access.sql`
 - `auth/sql/001_auth_prefix_tables.sql`
 - `main-site/sql/002_rename_main_announcements.sql`
 - `wake/sql/002_align_user_foreign_keys.sql`

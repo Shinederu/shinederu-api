@@ -17,7 +17,7 @@ Backend dedie au site principal `shinederu.ch`.
 Public:
 - `GET action=listPublicAnnouncements`
 
-Admin (session requise + `users.is_admin = 1` ou `users.role = 'admin'`):
+Admin (session requise + droit central `main.announcements.manage` ou super-admin global):
 - `GET action=listAnnouncements`
 - `POST action=createAnnouncement`
 - `PUT action=updateAnnouncement`

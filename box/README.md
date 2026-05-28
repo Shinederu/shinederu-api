@@ -17,9 +17,7 @@ Backend API de ShinedeBox, expose sous:
 
 - Session centralisee via cookie `sid` (domaine `.shinederu.ch`)
 - Validation session dans table `auth_sessions`
-- Acces metier reserve aux admins:
-  - `users.is_admin = 1` ou
-  - `users.role = 'admin'`
+- Acces metier reserve au droit central `box.files.manage` ou au super-admin global
 
 ## Configuration
 

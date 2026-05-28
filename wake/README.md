@@ -7,7 +7,7 @@ Backend Wake-on-LAN dedie a ShinedeWake, expose sous:
 ## Objectif
 
 - reutiliser la session `sid` de `shinederu/auth`
-- appliquer des permissions specifiques au site via des tables dediees
+- appliquer des permissions specifiques au site via les droits centralises `core_*`
 - lister, ajouter, modifier et supprimer les machines reveillables
 - envoyer un Magic Packet WOL depuis une machine situee sur le meme LAN que les cibles
 
@@ -38,9 +38,11 @@ La migration `sql/001_wake_core.sql` cree:
 - `wake_user_permissions`
 
 La migration `sql/002_align_user_foreign_keys.sql` aligne les references utilisateur avec `users.id` et ajoute les cles etrangeres.
+La migration `../core/sql/001_core_project_access.sql` cree les roles centralises `wake.wake` et `wake.manage`, puis importe les entrees existantes de `wake_user_permissions`.
 
-Les comptes admin globaux (`users.is_admin = 1` ou `users.role = 'admin'`) disposent d'un acces complet implicite.
-Pour les autres comptes, les droits sont portes par `wake_user_permissions`.
+Les comptes super-admin globaux disposent d'un acces complet implicite.
+Pour les autres comptes, les droits sont portes par `core_user_project_roles`.
+`wake_user_permissions` reste une table legacy conservee pour historique/rollback, mais n'est plus la source de verite apres la migration `core_*`.
 
 Niveaux de permission utilises par le panel:
 
@@ -48,15 +50,18 @@ Niveaux de permission utilises par le panel:
 - `wake`: acces au panel + envoi de magic packet
 - `manage`: acces WOL + gestion des machines + gestion des utilisateurs
 
-Exemple d'autorisation explicite pour un compte non-admin:
+Exemple d'autorisation explicite pour un compte non-admin via role central:
 
 ```sql
-INSERT INTO wake_user_permissions (user_id, can_wake, can_manage, granted_by_user_id)
-VALUES (42, 1, 0, 1)
+INSERT INTO core_user_project_roles (user_id, project_role_id, granted_by_user_id)
+SELECT 42, r.id, 1
+FROM core_project_roles r
+JOIN core_projects p ON p.id = r.project_id
+WHERE p.code = 'wake'
+  AND r.role_key = 'wake'
 ON DUPLICATE KEY UPDATE
-  can_wake = VALUES(can_wake),
-  can_manage = VALUES(can_manage),
-  granted_by_user_id = VALUES(granted_by_user_id);
+  granted_by_user_id = VALUES(granted_by_user_id),
+  updated_at = CURRENT_TIMESTAMP;
 ```
 
 ## Configuration
