@@ -177,6 +177,48 @@ class AuthService
         return $this->projectAccess()->hasPermission($userId, 'auth', 'users.manage');
     }
 
+    public function getProjectAccessForUser(int $userId): array
+    {
+        if ($userId <= 0) {
+            return [
+                'is_global_admin' => false,
+                'roles' => [],
+                'permissions' => [],
+            ];
+        }
+
+        $access = $this->projectAccess();
+        $projects = ['core', 'auth', 'main', 'melodyquest', 'box', 'wake'];
+        $roles = [];
+        foreach ($projects as $projectCode) {
+            $roles[$projectCode] = $access->getUserProjectRoleKeys($userId, $projectCode);
+        }
+
+        return [
+            'is_global_admin' => $access->isGlobalAdmin($userId),
+            'roles' => $roles,
+            'permissions' => [
+                'auth' => [
+                    'users_manage' => $access->hasPermission($userId, 'auth', 'users.manage'),
+                ],
+                'main' => [
+                    'announcements_manage' => $access->hasPermission($userId, 'main', 'announcements.manage'),
+                ],
+                'melodyquest' => [
+                    'catalog_manage' => $access->hasPermission($userId, 'melodyquest', 'catalog.manage'),
+                ],
+                'box' => [
+                    'files_manage' => $access->hasPermission($userId, 'box', 'files.manage'),
+                ],
+                'wake' => [
+                    'devices_wake' => $access->hasPermission($userId, 'wake', 'devices.wake'),
+                    'devices_manage' => $access->hasPermission($userId, 'wake', 'devices.manage'),
+                    'users_manage' => $access->hasPermission($userId, 'wake', 'users.manage'),
+                ],
+            ],
+        ];
+    }
+
     public function listUsersForAdmin(): array
     {
         $columns = [

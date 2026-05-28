@@ -356,6 +356,7 @@ class AuthController
 
         unset($user['password_hash']);
         $user['is_admin'] = (bool)($user['is_admin'] ?? false);
+        $user['project_access'] = $authService->getProjectAccessForUser((int)$user['id']);
 
         json_success(null, ['user' => $user]);
     }

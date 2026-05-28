@@ -47,6 +47,8 @@ Convention de nommage:
 - MelodyQuest conserve le prefixe `mq_`.
 - Wake conserve le prefixe `wake_`.
 
+`auth?action=me` expose aussi `user.project_access` pour les droits projet courants, en gardant `user.is_admin` comme indicateur super-admin compatible avec les anciens frontends.
+
 Migrations de nommage/alignment:
 
 - `core/sql/001_core_project_access.sql`
