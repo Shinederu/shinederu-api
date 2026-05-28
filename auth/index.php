@@ -10,6 +10,7 @@ $dotenv->load();
 require_once('utils/response.php');
 require_once('controllers/AuthController.php');
 require_once('controllers/UserController.php');
+require_once('controllers/CoreAccessController.php');
 require_once('middlewares/CorsMiddleware.php');
 require_once('middlewares/AuthMiddleware.php');
 //CorsMiddleware::apply(); Nginx gère les CORS
@@ -50,6 +51,10 @@ try {
                 case 'listUsers':
                     $userId = AuthMiddleware::check();
                     (new UserController())->listUsers($userId);
+                    exit;
+                case 'listCoreAccess':
+                    $userId = AuthMiddleware::check();
+                    (new CoreAccessController())->listCoreAccess($userId);
                     exit;
                 default:
                     unknownAction('GET');
@@ -114,6 +119,26 @@ try {
                 case 'updateUserRole':
                     $userId = AuthMiddleware::check();
                     (new UserController())->updateUserRole($body, $userId);
+                    exit;
+                case 'saveCoreProject':
+                    $userId = AuthMiddleware::check();
+                    (new CoreAccessController())->saveProject($body, $userId);
+                    exit;
+                case 'saveCoreRole':
+                    $userId = AuthMiddleware::check();
+                    (new CoreAccessController())->saveRole($body, $userId);
+                    exit;
+                case 'saveCorePermission':
+                    $userId = AuthMiddleware::check();
+                    (new CoreAccessController())->savePermission($body, $userId);
+                    exit;
+                case 'setCoreRolePermissions':
+                    $userId = AuthMiddleware::check();
+                    (new CoreAccessController())->setRolePermissions($body, $userId);
+                    exit;
+                case 'setCoreUserProjectRoles':
+                    $userId = AuthMiddleware::check();
+                    (new CoreAccessController())->setUserProjectRoles($body, $userId);
                     exit;
                 default:
                     unknownAction('PUT');

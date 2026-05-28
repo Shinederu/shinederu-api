@@ -18,3 +18,8 @@ Migration:
 
 - `sql/001_core_project_access.sql`
 
+Administration:
+
+- `GET /auth/?action=listCoreAccess` liste projets, roles, permissions et assignations.
+- `PUT /auth/` avec `action=saveCoreProject`, `saveCoreRole`, `saveCorePermission`, `setCoreRolePermissions` ou `setCoreUserProjectRoles` modifie le modele.
+- Ces endpoints sont reserves a `core.super_admin`.

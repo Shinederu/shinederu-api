@@ -48,6 +48,7 @@ Convention de nommage:
 - Wake conserve le prefixe `wake_`.
 
 `auth?action=me` expose aussi `user.project_access` pour les droits projet courants, en gardant `user.is_admin` comme indicateur super-admin compatible avec les anciens frontends.
+Les endpoints d'administration `core_*` passent par `auth` et exigent `core.super_admin`.
 
 Migrations de nommage/alignment:
 
