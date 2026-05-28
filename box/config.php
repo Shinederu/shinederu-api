@@ -194,14 +194,14 @@ function get_current_auth_state(): array
     $hasIsAdmin = users_has_is_admin_column($pdo);
     if ($hasIsAdmin) {
         $sql = 'SELECT u.id, u.username, u.email, u.role, u.is_admin
-                FROM sessions s
+                FROM auth_sessions s
                 INNER JOIN users u ON u.id = s.user_id
                 WHERE s.id = :sid
                   AND s.expires_at > NOW()
                 LIMIT 1';
     } else {
         $sql = 'SELECT u.id, u.username, u.email, u.role, NULL AS is_admin
-                FROM sessions s
+                FROM auth_sessions s
                 INNER JOIN users u ON u.id = s.user_id
                 WHERE s.id = :sid
                   AND s.expires_at > NOW()

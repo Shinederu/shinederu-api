@@ -80,9 +80,9 @@ class AuthService
         $expiresAt = date('Y-m-d H:i:s', strtotime('+1 day'));
 
         // Supprime les anciens tokens de lâ€™utilisateur (Ã©vite les doublons)
-        $this->db->delete('email_verification_tokens', ['user_id' => $userId]);
+        $this->db->delete('auth_email_verification_tokens', ['user_id' => $userId]);
 
-        $this->db->insert('email_verification_tokens', [
+        $this->db->insert('auth_email_verification_tokens', [
             'user_id' => $userId,
             'token' => $token,
             'expires_at' => $expiresAt,
@@ -98,7 +98,7 @@ class AuthService
      */
     public function verifyEmailToken(string $token): bool
     {
-        $record = $this->db->get('email_verification_tokens', ['user_id', 'expires_at'], [
+        $record = $this->db->get('auth_email_verification_tokens', ['user_id', 'expires_at'], [
             'token' => $token
         ]);
 
@@ -108,13 +108,13 @@ class AuthService
             return false;
 
         $this->db->update('users', ['email_verified' => 1], ['id' => $record['user_id']]);
-        $this->db->delete('email_verification_tokens', ['user_id' => $record['user_id']]);
+        $this->db->delete('auth_email_verification_tokens', ['user_id' => $record['user_id']]);
         return true;
     }
 
     public function revokeRegister(string $token): bool
     {
-        $record = $this->db->get('email_verification_tokens', ['user_id', 'expires_at'], [
+        $record = $this->db->get('auth_email_verification_tokens', ['user_id', 'expires_at'], [
             'token' => $token
         ]);
 
@@ -123,7 +123,7 @@ class AuthService
         if (strtotime($record['expires_at']) < time())
             return false;
 
-        $this->db->delete('email_verification_tokens', ['user_id' => $record['user_id']]);
+        $this->db->delete('auth_email_verification_tokens', ['user_id' => $record['user_id']]);
         $this->db->delete('users', ['id' => $record['user_id']]);
         return true;
     }
@@ -226,9 +226,9 @@ class AuthService
         $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
         // Supprime les anciens tokens Ã©ventuels pour ce user
-        $this->db->delete('password_reset_tokens', ['user_id' => $userId]);
+        $this->db->delete('auth_password_reset_tokens', ['user_id' => $userId]);
 
-        $this->db->insert('password_reset_tokens', [
+        $this->db->insert('auth_password_reset_tokens', [
             'user_id' => $userId,
             'token' => $token,
             'expires_at' => $expiresAt
@@ -242,7 +242,7 @@ class AuthService
      */
     public function verifyPasswordResetToken(string $token)
     {
-        $record = $this->db->get('password_reset_tokens', ['user_id', 'expires_at'], [
+        $record = $this->db->get('auth_password_reset_tokens', ['user_id', 'expires_at'], [
             'token' => $token
         ]);
         if (!$record)
@@ -257,7 +257,7 @@ class AuthService
      */
     public function consumePasswordResetToken(string $token)
     {
-        $this->db->delete('password_reset_tokens', ['token' => $token]);
+        $this->db->delete('auth_password_reset_tokens', ['token' => $token]);
     }
 
     /**
@@ -282,12 +282,12 @@ class AuthService
 
     public function getEmailVerificationToken(string $token)
     {
-        return $this->db->get('email_verification_tokens', '*', ['token' => $token]);
+        return $this->db->get('auth_email_verification_tokens', '*', ['token' => $token]);
     }
 
     public function getEmailVerificationTokenByID(string $id)
     {
-        return $this->db->get('email_verification_tokens', '*', ['user_id' => $id], );
+        return $this->db->get('auth_email_verification_tokens', '*', ['user_id' => $id], );
     }
 
     public function getEmailByUserId(string $userId)
@@ -308,7 +308,7 @@ class AuthService
 
     public function consumeEmailVerificationToken(string $token)
     {
-        $this->db->delete('email_verification_tokens', ['token' => $token]);
+        $this->db->delete('auth_email_verification_tokens', ['token' => $token]);
     }
 
     private function hasIsAdminColumn(): bool

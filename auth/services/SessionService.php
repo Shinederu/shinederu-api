@@ -20,7 +20,7 @@ class SessionService
         $sessionId = TokenService::generateToken(64); // ID sÃ©curisÃ©
         $expiresAt = date('Y-m-d H:i:s', strtotime("+$durationHours hours"));
 
-        $this->db->insert('sessions', [
+        $this->db->insert('auth_sessions', [
             'id'         => $sessionId,
             'user_id'    => $userId,
             'expires_at' => $expiresAt
@@ -33,7 +33,7 @@ class SessionService
      */
     public function isSessionValid(string $sessionId, bool $refresh = true): bool
     {
-        $session = $this->db->get('sessions', ['user_id', 'expires_at'], [
+        $session = $this->db->get('auth_sessions', ['user_id', 'expires_at'], [
             'id' => $sessionId
         ]);
 
@@ -43,7 +43,7 @@ class SessionService
 
         if ($refresh) {
             $newExpires = date('Y-m-d H:i:s', strtotime("+" . SESSION_DURATION_HOURS . " hours"));
-            $this->db->update('sessions', ['expires_at' => $newExpires], ['id' => $sessionId]);
+            $this->db->update('auth_sessions', ['expires_at' => $newExpires], ['id' => $sessionId]);
         }
         return true;
     }
@@ -53,7 +53,7 @@ class SessionService
      */
     public function getUserIdFromSession(string $sessionId)
     {
-        $session = $this->db->get('sessions', ['user_id', 'expires_at'], [
+        $session = $this->db->get('auth_sessions', ['user_id', 'expires_at'], [
             'id' => $sessionId
         ]);
         if (!$session || strtotime($session['expires_at']) <= time()) {
@@ -62,7 +62,7 @@ class SessionService
 
         // Sliding expiration: refresh on access
         $newExpires = date('Y-m-d H:i:s', strtotime("+" . SESSION_DURATION_HOURS . " hours"));
-        $this->db->update('sessions', ['expires_at' => $newExpires], ['id' => $sessionId]);
+        $this->db->update('auth_sessions', ['expires_at' => $newExpires], ['id' => $sessionId]);
 
         return $session['user_id'];
     }
@@ -72,7 +72,7 @@ class SessionService
      */
     public function deleteSession(string $sessionId): void
     {
-        $this->db->delete('sessions', ['id' => $sessionId]);
+        $this->db->delete('auth_sessions', ['id' => $sessionId]);
     }
 
     /**
@@ -80,6 +80,6 @@ class SessionService
      */
     public function deleteAllSessionsForUser(int $userId): void
     {
-        $this->db->delete('sessions', ['user_id' => $userId]);
+        $this->db->delete('auth_sessions', ['user_id' => $userId]);
     }
 }

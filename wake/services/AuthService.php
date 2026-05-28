@@ -148,14 +148,14 @@ class AuthService
     {
         if ($this->hasUsersIsAdminColumn()) {
             $sql = 'SELECT u.id, u.username, u.email, u.role, u.is_admin
-                    FROM sessions s
+                    FROM auth_sessions s
                     INNER JOIN users u ON u.id = s.user_id
                     WHERE s.id = :session_id
                       AND s.expires_at > NOW()
                     LIMIT 1';
         } else {
             $sql = 'SELECT u.id, u.username, u.email, u.role, NULL AS is_admin
-                    FROM sessions s
+                    FROM auth_sessions s
                     INNER JOIN users u ON u.id = s.user_id
                     WHERE s.id = :session_id
                       AND s.expires_at > NOW()

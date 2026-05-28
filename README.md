@@ -38,6 +38,20 @@ Les projets utilisent la meme instance MySQL et le meme schema partage:
 
 Les identifiants techniques peuvent differer (`DB_*` / `MQ_DB_*`), mais pointent vers le meme schema.
 
+Convention de nommage:
+
+- `users` reste la table centrale partagee.
+- Les tables Auth utilisent le prefixe `auth_` (`auth_sessions`, `auth_password_reset_tokens`, `auth_email_verification_tokens`).
+- Les tables du site principal utilisent le prefixe `main_` (`main_announcements`).
+- MelodyQuest conserve le prefixe `mq_`.
+- Wake conserve le prefixe `wake_`.
+
+Migrations de nommage/alignment:
+
+- `auth/sql/001_auth_prefix_tables.sql`
+- `main-site/sql/002_rename_main_announcements.sql`
+- `wake/sql/002_align_user_foreign_keys.sql`
+
 ## MelodyQuest (blindtest)
 
 - Auth partagee via `auth/` (session commune domaine/sous-domaines)

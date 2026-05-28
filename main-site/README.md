@@ -27,3 +27,7 @@ Admin (session requise + `users.is_admin = 1` ou `users.role = 'admin'`):
 
 Table annonces:
 - `sql/001_main_site_announcements.sql`
+- `sql/002_rename_main_announcements.sql`
+
+Etat cible:
+- table `main_announcements`

@@ -37,6 +37,8 @@ La migration `sql/001_wake_core.sql` cree:
 - `wake_devices`
 - `wake_user_permissions`
 
+La migration `sql/002_align_user_foreign_keys.sql` aligne les references utilisateur avec `users.id` et ajoute les cles etrangeres.
+
 Les comptes admin globaux (`users.is_admin = 1` ou `users.role = 'admin'`) disposent d'un acces complet implicite.
 Pour les autres comptes, les droits sont portes par `wake_user_permissions`.
 

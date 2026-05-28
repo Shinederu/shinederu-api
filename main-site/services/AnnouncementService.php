@@ -15,7 +15,7 @@ class AnnouncementService
     {
         $stmt = $this->db->prepare(
             'SELECT id, title, message, button_label, button_link, published_at, created_at, updated_at
-             FROM main_site_announcements
+             FROM main_announcements
              ORDER BY published_at DESC, id DESC
              LIMIT :limit OFFSET :offset'
         );
@@ -30,7 +30,7 @@ class AnnouncementService
     {
         $stmt = $this->db->prepare(
             'SELECT id, title, message, button_label, button_link, published_at, created_at, updated_at, author_user_id, updated_by_user_id
-             FROM main_site_announcements
+             FROM main_announcements
              ORDER BY published_at DESC, id DESC
              LIMIT :limit OFFSET :offset'
         );
@@ -43,7 +43,7 @@ class AnnouncementService
 
     public function countAll(): int
     {
-        $stmt = $this->db->query('SELECT COUNT(*) AS c FROM main_site_announcements');
+        $stmt = $this->db->query('SELECT COUNT(*) AS c FROM main_announcements');
         $row = $stmt->fetch();
 
         return (int)($row['c'] ?? 0);
@@ -52,7 +52,7 @@ class AnnouncementService
     public function create(array $data, int $authorUserId): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO main_site_announcements
+            'INSERT INTO main_announcements
             (title, message, button_label, button_link, published_at, author_user_id, updated_by_user_id)
             VALUES (:title, :message, :button_label, :button_link, :published_at, :author_user_id, :updated_by_user_id)'
         );
@@ -72,7 +72,7 @@ class AnnouncementService
     public function update(int $id, array $data, int $updatedByUserId): bool
     {
         $stmt = $this->db->prepare(
-            'UPDATE main_site_announcements
+            'UPDATE main_announcements
              SET title = :title,
                  message = :message,
                  button_label = :button_label,
@@ -97,7 +97,7 @@ class AnnouncementService
 
     public function delete(int $id): bool
     {
-        $stmt = $this->db->prepare('DELETE FROM main_site_announcements WHERE id = :id');
+        $stmt = $this->db->prepare('DELETE FROM main_announcements WHERE id = :id');
         $stmt->execute(['id' => $id]);
 
         return $stmt->rowCount() > 0;
@@ -107,7 +107,7 @@ class AnnouncementService
     {
         $stmt = $this->db->prepare(
             'SELECT id, title, message, button_label, button_link, published_at, created_at, updated_at
-             FROM main_site_announcements
+             FROM main_announcements
              WHERE id = :id
              LIMIT 1'
         );
