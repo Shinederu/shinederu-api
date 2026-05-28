@@ -9,13 +9,13 @@ RENAME TABLE
   email_verification_tokens TO auth_email_verification_tokens;
 
 ALTER TABLE auth_sessions
-  DROP FOREIGN KEY sessions_ibfk_1;
+  DROP FOREIGN KEY auth_sessions_ibfk_1;
 
 ALTER TABLE auth_password_reset_tokens
-  DROP FOREIGN KEY password_reset_tokens_ibfk_1;
+  DROP FOREIGN KEY auth_password_reset_tokens_ibfk_1;
 
 ALTER TABLE auth_email_verification_tokens
-  DROP FOREIGN KEY email_verification_tokens_ibfk_1;
+  DROP FOREIGN KEY auth_email_verification_tokens_ibfk_1;
 
 ALTER TABLE auth_sessions
   RENAME INDEX user_id TO idx_auth_sessions_user;
