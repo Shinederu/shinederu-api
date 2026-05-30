@@ -58,6 +58,7 @@ Migrations de nommage/alignment:
 - `auth/sql/001_auth_prefix_tables.sql`
 - `main-site/sql/002_rename_main_announcements.sql`
 - `wake/sql/002_align_user_foreign_keys.sql`
+- `wake/sql/003_wake_device_components.sql`
 
 ## MelodyQuest (blindtest)
 

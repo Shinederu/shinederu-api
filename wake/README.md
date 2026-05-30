@@ -38,6 +38,7 @@ La migration `sql/001_wake_core.sql` cree:
 - `wake_user_permissions`
 
 La migration `sql/002_align_user_foreign_keys.sql` aligne les references utilisateur avec `users.id` et ajoute les cles etrangeres.
+La migration `sql/003_wake_device_components.sql` ajoute `wake_device_components` pour rattacher processeur, carte mere, RAM, cartes d'extension et autres informations materiel a chaque machine.
 La migration `../core/sql/001_core_project_access.sql` cree les roles centralises `wake.wake` et `wake.manage`, puis importe les entrees existantes de `wake_user_permissions`.
 
 Les comptes super-admin globaux disposent d'un acces complet implicite.
@@ -103,6 +104,16 @@ Si le dossier n'est pas writable par PHP, les traces restent visibles dans le `e
 
 Les adresses MAC peuvent etre saisies avec `-`, `:` ou sans separateur.
 Avant l'envoi, l'API retire tous les separateurs et construit le Magic Packet a partir de 12 caracteres hexadecimaux.
+
+## Composants materiel
+
+`listDevices`, `createDevice` et `updateDevice` transportent aussi `components`.
+Chaque composant contient:
+
+- `component_type`: `processor`, `motherboard`, `memory`, `graphics_card`, `storage`, `network_card`, `sound_card`, `capture_card`, `extension_card`, `power_supply`, `cooling`, `case` ou `other`
+- `label`: modele ou reference lisible
+- `details`: precision optionnelle
+- `sort_order`: ordre d'affichage
 
 ## Verification locale
 

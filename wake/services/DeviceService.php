@@ -6,6 +6,22 @@ require_once __DIR__ . '/PingService.php';
 
 class DeviceService
 {
+    private const COMPONENT_TYPES = [
+        'processor',
+        'motherboard',
+        'memory',
+        'graphics_card',
+        'storage',
+        'network_card',
+        'sound_card',
+        'capture_card',
+        'extension_card',
+        'power_supply',
+        'cooling',
+        'case',
+        'other',
+    ];
+
     private PDO $db;
     private PingService $pingService;
 
@@ -33,7 +49,15 @@ class DeviceService
             return [];
         }
 
-        return array_map(fn(array $row) => $this->hydrateDeviceState($this->mapDevice($row)), $rows);
+        $devices = array_map(fn(array $row) => $this->mapDevice($row), $rows);
+        $componentMap = $this->fetchComponentsForDeviceIds(array_column($devices, 'id'));
+
+        return array_map(
+            fn(array $device): array => $this->hydrateDeviceState($device + [
+                'components' => $componentMap[$device['id']] ?? [],
+            ]),
+            $devices
+        );
     }
 
     public function getDeviceById(int $deviceId): ?array
@@ -47,32 +71,56 @@ class DeviceService
         $statement->execute(['id' => $deviceId]);
         $row = $statement->fetch();
 
-        return is_array($row) ? $this->hydrateDeviceState($this->mapDevice($row)) : null;
+        if (!is_array($row)) {
+            return null;
+        }
+
+        $device = $this->mapDevice($row);
+        $componentMap = $this->fetchComponentsForDeviceIds([$device['id']]);
+
+        return $this->hydrateDeviceState($device + [
+            'components' => $componentMap[$device['id']] ?? [],
+        ]);
     }
 
     public function createDevice(array $input, ?int $createdByUserId = null): array
     {
         $payload = $this->normalizePayload($input);
+        $components = $this->normalizeComponents($input['components'] ?? []);
 
-        $statement = $this->db->prepare(
-            'INSERT INTO wake_devices
-                (name, mac_address, target_ip, broadcast_address, port, description, is_enabled, sort_order, created_by_user_id)
-             VALUES
-                (:name, :mac_address, :target_ip, :broadcast_address, :port, :description, :is_enabled, :sort_order, :created_by_user_id)'
-        );
-        $statement->execute([
-            'name' => $payload['name'],
-            'mac_address' => $payload['mac_address'],
-            'target_ip' => $payload['target_ip'] !== '' ? $payload['target_ip'] : null,
-            'broadcast_address' => $payload['broadcast_address'] !== '' ? $payload['broadcast_address'] : null,
-            'port' => $payload['port'],
-            'description' => $payload['description'] !== '' ? $payload['description'] : null,
-            'is_enabled' => $payload['is_enabled'] ? 1 : 0,
-            'sort_order' => $payload['sort_order'],
-            'created_by_user_id' => $createdByUserId,
-        ]);
+        try {
+            $this->db->beginTransaction();
 
-        $device = $this->getDeviceById((int)$this->db->lastInsertId());
+            $statement = $this->db->prepare(
+                'INSERT INTO wake_devices
+                    (name, mac_address, target_ip, broadcast_address, port, description, is_enabled, sort_order, created_by_user_id)
+                 VALUES
+                    (:name, :mac_address, :target_ip, :broadcast_address, :port, :description, :is_enabled, :sort_order, :created_by_user_id)'
+            );
+            $statement->execute([
+                'name' => $payload['name'],
+                'mac_address' => $payload['mac_address'],
+                'target_ip' => $payload['target_ip'] !== '' ? $payload['target_ip'] : null,
+                'broadcast_address' => $payload['broadcast_address'] !== '' ? $payload['broadcast_address'] : null,
+                'port' => $payload['port'],
+                'description' => $payload['description'] !== '' ? $payload['description'] : null,
+                'is_enabled' => $payload['is_enabled'] ? 1 : 0,
+                'sort_order' => $payload['sort_order'],
+                'created_by_user_id' => $createdByUserId,
+            ]);
+
+            $deviceId = (int)$this->db->lastInsertId();
+            $this->replaceDeviceComponents($deviceId, $components);
+            $this->db->commit();
+        } catch (Throwable $exception) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $exception;
+        }
+
+        $device = $this->getDeviceById($deviceId);
         if ($device === null) {
             throw new RuntimeException('La machine a ete creee, mais sa relecture a echoue.');
         }
@@ -87,30 +135,44 @@ class DeviceService
         }
 
         $payload = $this->normalizePayload($input);
+        $components = $this->normalizeComponents($input['components'] ?? []);
 
-        $statement = $this->db->prepare(
-            'UPDATE wake_devices
-             SET name = :name,
-                 mac_address = :mac_address,
-                 target_ip = :target_ip,
-                 broadcast_address = :broadcast_address,
-                 port = :port,
-                 description = :description,
-                 is_enabled = :is_enabled,
-                 sort_order = :sort_order
-             WHERE id = :id'
-        );
-        $statement->execute([
-            'id' => $deviceId,
-            'name' => $payload['name'],
-            'mac_address' => $payload['mac_address'],
-            'target_ip' => $payload['target_ip'] !== '' ? $payload['target_ip'] : null,
-            'broadcast_address' => $payload['broadcast_address'] !== '' ? $payload['broadcast_address'] : null,
-            'port' => $payload['port'],
-            'description' => $payload['description'] !== '' ? $payload['description'] : null,
-            'is_enabled' => $payload['is_enabled'] ? 1 : 0,
-            'sort_order' => $payload['sort_order'],
-        ]);
+        try {
+            $this->db->beginTransaction();
+
+            $statement = $this->db->prepare(
+                'UPDATE wake_devices
+                 SET name = :name,
+                     mac_address = :mac_address,
+                     target_ip = :target_ip,
+                     broadcast_address = :broadcast_address,
+                     port = :port,
+                     description = :description,
+                     is_enabled = :is_enabled,
+                     sort_order = :sort_order
+                 WHERE id = :id'
+            );
+            $statement->execute([
+                'id' => $deviceId,
+                'name' => $payload['name'],
+                'mac_address' => $payload['mac_address'],
+                'target_ip' => $payload['target_ip'] !== '' ? $payload['target_ip'] : null,
+                'broadcast_address' => $payload['broadcast_address'] !== '' ? $payload['broadcast_address'] : null,
+                'port' => $payload['port'],
+                'description' => $payload['description'] !== '' ? $payload['description'] : null,
+                'is_enabled' => $payload['is_enabled'] ? 1 : 0,
+                'sort_order' => $payload['sort_order'],
+            ]);
+
+            $this->replaceDeviceComponents($deviceId, $components);
+            $this->db->commit();
+        } catch (Throwable $exception) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $exception;
+        }
 
         $device = $this->getDeviceById($deviceId);
         if ($device === null) {
@@ -225,6 +287,7 @@ class DeviceService
             'is_enabled' => to_bool($row['is_enabled'] ?? 0),
             'sort_order' => (int)($row['sort_order'] ?? 0),
             'last_wake_at' => $row['last_wake_at'] !== null ? (string)$row['last_wake_at'] : null,
+            'components' => [],
             'created_at' => (string)($row['created_at'] ?? ''),
             'updated_at' => (string)($row['updated_at'] ?? ''),
         ];
@@ -233,5 +296,131 @@ class DeviceService
     private function hydrateDeviceState(array $device): array
     {
         return $device + $this->pingService->getPowerState($device['target_ip'] ?? '');
+    }
+
+    private function normalizeComponents($input): array
+    {
+        if ($input === null || $input === '') {
+            return [];
+        }
+
+        if (!is_array($input)) {
+            throw new InvalidArgumentException('La liste des composants est invalide.');
+        }
+
+        $components = [];
+
+        foreach (array_values($input) as $index => $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $type = trim((string)($entry['component_type'] ?? $entry['type'] ?? 'other'));
+            $label = trim((string)($entry['label'] ?? $entry['name'] ?? ''));
+            $details = trim((string)($entry['details'] ?? ''));
+
+            if ($label === '' && $details === '') {
+                continue;
+            }
+
+            if (!in_array($type, self::COMPONENT_TYPES, true)) {
+                throw new InvalidArgumentException('Type de composant invalide.');
+            }
+
+            if ($label === '') {
+                throw new InvalidArgumentException('Le nom du composant est obligatoire.');
+            }
+
+            if (mb_strlen($label) > 120) {
+                throw new InvalidArgumentException('Le nom du composant est trop long (120 caracteres max).');
+            }
+
+            if (mb_strlen($details) > 255) {
+                throw new InvalidArgumentException('Le detail du composant est trop long (255 caracteres max).');
+            }
+
+            $components[] = [
+                'component_type' => $type,
+                'label' => $label,
+                'details' => $details,
+                'sort_order' => isset($entry['sort_order']) ? (int)$entry['sort_order'] : $index,
+            ];
+        }
+
+        usort(
+            $components,
+            static fn(array $left, array $right): int => $left['sort_order'] <=> $right['sort_order']
+        );
+
+        return array_values($components);
+    }
+
+    private function replaceDeviceComponents(int $deviceId, array $components): void
+    {
+        $delete = $this->db->prepare('DELETE FROM wake_device_components WHERE device_id = :device_id');
+        $delete->execute(['device_id' => $deviceId]);
+
+        if ($components === []) {
+            return;
+        }
+
+        $insert = $this->db->prepare(
+            'INSERT INTO wake_device_components
+                (device_id, component_type, label, details, sort_order)
+             VALUES
+                (:device_id, :component_type, :label, :details, :sort_order)'
+        );
+
+        foreach ($components as $index => $component) {
+            $insert->execute([
+                'device_id' => $deviceId,
+                'component_type' => $component['component_type'],
+                'label' => $component['label'],
+                'details' => $component['details'] !== '' ? $component['details'] : null,
+                'sort_order' => $index,
+            ]);
+        }
+    }
+
+    private function fetchComponentsForDeviceIds(array $deviceIds): array
+    {
+        $deviceIds = array_values(array_unique(array_map('intval', $deviceIds)));
+        $deviceIds = array_filter($deviceIds, static fn(int $id): bool => $id > 0);
+
+        if ($deviceIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($deviceIds), '?'));
+        $statement = $this->db->prepare(
+            "SELECT id, device_id, component_type, label, details, sort_order, created_at, updated_at
+             FROM wake_device_components
+             WHERE device_id IN ($placeholders)
+             ORDER BY device_id ASC, sort_order ASC, id ASC"
+        );
+        $statement->execute($deviceIds);
+        $rows = $statement->fetchAll();
+
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $componentsByDevice = [];
+
+        foreach ($rows as $row) {
+            $deviceId = (int)$row['device_id'];
+            $componentsByDevice[$deviceId][] = [
+                'id' => (int)$row['id'],
+                'device_id' => $deviceId,
+                'component_type' => (string)($row['component_type'] ?? 'other'),
+                'label' => (string)($row['label'] ?? ''),
+                'details' => (string)($row['details'] ?? ''),
+                'sort_order' => (int)($row['sort_order'] ?? 0),
+                'created_at' => (string)($row['created_at'] ?? ''),
+                'updated_at' => (string)($row['updated_at'] ?? ''),
+            ];
+        }
+
+        return $componentsByDevice;
     }
 }
