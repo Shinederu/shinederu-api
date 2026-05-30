@@ -5,6 +5,7 @@ Backends des projets Shinederu et configuration de deploiement API.
 ## Contenu
 
 - `auth/` : API d'authentification
+- `core/` : couche partagee pour droits/projets centralises
 - `melodyquest/` : backend MelodyQuest
 - `main-site/` : backend du site principal (annonces, contenus dynamiques)
 - `box/` : backend ShinedeBox (gestion fichiers admin)
@@ -31,6 +32,7 @@ Backends des projets Shinederu et configuration de deploiement API.
 Les projets utilisent la meme instance MySQL et le meme schema partage:
 
 - `auth/` -> schema partage (credentials `DB_*`)
+- `core/` -> schema partage (tables `core_*`, service PHP partage)
 - `melodyquest/` -> schema partage (credentials `MQ_DB_*`)
 - `main-site/` -> schema partage (credentials `DB_*`)
 - `box/` -> schema partage (credentials `DB_*` ou `MQ_DB_*`)
@@ -63,7 +65,7 @@ Migrations de nommage/alignment:
 - Frontend sans framework (JS/CSS/HTML)
 - Lobbies configurables par leur createur
 - Catalogue YouTube structure par categories/familles
-- Admin catalogue via role utilisateur en DB (`users.role`)
+- Admin catalogue via droit central `melodyquest.catalog.manage` ou super-admin global
 - Backend PHP structure inspiree de `auth/`:
   - `melodyquest/controllers`
   - `melodyquest/services`
@@ -74,6 +76,15 @@ Migrations de nommage/alignment:
 Migration schema MelodyQuest:
 
 - `melodyquest/sql/001_melodyquest_core.sql`
+
+## Droits centralises (`core_*`)
+
+- Les projets, roles, permissions et assignations utilisateur sont stockes dans `core_*`.
+- Les backends PHP doivent utiliser `core/services/ProjectAccessService.php`.
+- Le code backend verifie des permissions stables, par exemple `hasPermission($userId, 'main', 'announcements.manage')`.
+- Dans la documentation, une permission complete peut etre notee `projet.permission` (`melodyquest.catalog.manage`), mais le code backend passe toujours le projet et la permission separement.
+- Les roles sont des groupes configurables de permissions; renommer un label de role n'implique pas de changement backend.
+- L'interface super-admin est dans le frontend principal: Dashboard -> Permissions (`/permissions`).
 
 ## Securite
 

@@ -23,3 +23,4 @@ Administration:
 - `GET /auth/?action=listCoreAccess` liste projets, roles, permissions et assignations.
 - `PUT /auth/` avec `action=saveCoreProject`, `saveCoreRole`, `saveCorePermission`, `setCoreRolePermissions` ou `setCoreUserProjectRoles` modifie le modele.
 - Ces endpoints sont reserves a `core.super_admin`.
+- L'interface utilisateur correspondante est dans `Shinederu` sur `/permissions` (tuile Dashboard "Permissions").
