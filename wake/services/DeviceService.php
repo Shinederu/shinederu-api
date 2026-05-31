@@ -53,9 +53,9 @@ class DeviceService
         $componentMap = $this->fetchComponentsForDeviceIds(array_column($devices, 'id'));
 
         return array_map(
-            fn(array $device): array => $this->hydrateDeviceState($device + [
+            fn(array $device): array => $this->hydrateDeviceState(array_replace($device, [
                 'components' => $componentMap[$device['id']] ?? [],
-            ]),
+            ])),
             $devices
         );
     }
@@ -78,9 +78,9 @@ class DeviceService
         $device = $this->mapDevice($row);
         $componentMap = $this->fetchComponentsForDeviceIds([$device['id']]);
 
-        return $this->hydrateDeviceState($device + [
+        return $this->hydrateDeviceState(array_replace($device, [
             'components' => $componentMap[$device['id']] ?? [],
-        ]);
+        ]));
     }
 
     public function createDevice(array $input, ?int $createdByUserId = null): array
