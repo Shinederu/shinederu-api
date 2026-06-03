@@ -67,6 +67,22 @@ Variables principales:
 /var/www/ShinedeBoxStorage/files
 ```
 
+En production Docker, `DB_HOST` doit pointer vers le service interne:
+
+```text
+DB_HOST=MySQL
+```
+
+Depuis le poste Codex Windows, les tests CLI peuvent utiliser `192.168.10.10`.
+
+## Logs
+
+Les erreurs applicatives Box sont ecrites dans:
+
+- `API/box/logs/box.log`
+
+Ce dossier est runtime et ne doit pas etre versionne.
+
 ## Verification locale
 
 ```powershell

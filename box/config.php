@@ -129,13 +129,27 @@ function json_error(string $message, int $status = 400, array $extra = []): void
 
 function handle_api_exception(Throwable $exception): void
 {
-    error_log('[box] ' . get_class($exception) . ': ' . $exception->getMessage());
+    $message = '[box] ' . get_class($exception) . ': ' . $exception->getMessage()
+        . ' in ' . $exception->getFile() . ':' . $exception->getLine();
+    error_log($message);
+    box_error_log($message);
 
     if ($exception instanceof InvalidArgumentException) {
         json_error($exception->getMessage(), 400);
     }
 
     json_error('Erreur applicative Box.', 500);
+}
+
+function box_error_log(string $message): void
+{
+    $dir = __DIR__ . '/logs';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0775, true);
+    }
+
+    $line = date('c') . ' ' . $message . PHP_EOL;
+    @file_put_contents($dir . '/box.log', $line, FILE_APPEND | LOCK_EX);
 }
 
 function request_data(): array
