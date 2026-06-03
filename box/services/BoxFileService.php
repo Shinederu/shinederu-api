@@ -111,26 +111,31 @@ class BoxFileService
         $checksum = @hash_file('sha256', $dest) ?: null;
         $publicId = $this->createUniquePublicId();
 
-        $stmt = $this->db->prepare(
-            "INSERT INTO box_files
-              (public_id, owner_user_id, original_name, display_name, stored_name, extension, mime_type,
-               size_bytes, checksum_sha256, storage_path)
-             VALUES
-              (:public_id, :owner_user_id, :original_name, :display_name, :stored_name, :extension, :mime_type,
-               :size_bytes, :checksum_sha256, :storage_path)"
-        );
-        $stmt->execute([
-            'public_id' => $publicId,
-            'owner_user_id' => isset($auth['user']['id']) ? (int)$auth['user']['id'] : null,
-            'original_name' => $originalName,
-            'display_name' => $displayName,
-            'stored_name' => $stored,
-            'extension' => $ext,
-            'mime_type' => $mime,
-            'size_bytes' => filesize($dest) ?: $size,
-            'checksum_sha256' => $checksum,
-            'storage_path' => $stored,
-        ]);
+        try {
+            $stmt = $this->db->prepare(
+                "INSERT INTO box_files
+                  (public_id, owner_user_id, original_name, display_name, stored_name, extension, mime_type,
+                   size_bytes, checksum_sha256, storage_path)
+                 VALUES
+                  (:public_id, :owner_user_id, :original_name, :display_name, :stored_name, :extension, :mime_type,
+                   :size_bytes, :checksum_sha256, :storage_path)"
+            );
+            $stmt->execute([
+                'public_id' => $publicId,
+                'owner_user_id' => isset($auth['user']['id']) ? (int)$auth['user']['id'] : null,
+                'original_name' => $originalName,
+                'display_name' => $displayName,
+                'stored_name' => $stored,
+                'extension' => $ext,
+                'mime_type' => $mime,
+                'size_bytes' => filesize($dest) ?: $size,
+                'checksum_sha256' => $checksum,
+                'storage_path' => $stored,
+            ]);
+        } catch (Throwable $exception) {
+            @unlink($dest);
+            throw $exception;
+        }
 
         return $this->getFileById((int)$this->db->lastInsertId());
     }

@@ -437,7 +437,7 @@ function unique_filename(string $ext): string
 
 function random_public_id(): string
 {
-    return rtrim(strtr(base64_encode(random_bytes(20)), '+/', '-_'), '=');
+    return rtrim(strtr(base64_encode(random_bytes(19)), '+/', '-_'), '=');
 }
 
 function random_share_token(): string
