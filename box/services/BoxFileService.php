@@ -199,10 +199,11 @@ class BoxFileService
         $this->getFileById($fileId);
 
         $stmt = $this->db->prepare(
-            "SELECT *
-             FROM box_shares
-             WHERE file_id = :file_id
-             ORDER BY is_active DESC, created_at DESC, id DESC"
+            "SELECT s.*, f.display_name AS file_display_name
+             FROM box_shares s
+             JOIN box_files f ON f.id = s.file_id AND f.deleted_at IS NULL
+             WHERE s.file_id = :file_id
+             ORDER BY s.is_active DESC, s.created_at DESC, s.id DESC"
         );
         $stmt->execute(['file_id' => $fileId]);
 
@@ -395,6 +396,9 @@ class BoxFileService
         $isExpired = $expiresAt !== null && strtotime($expiresAt) <= time();
         $isLimited = $maxDownloads !== null && $downloadCount >= $maxDownloads;
         $token = (string)$row['token'];
+        $filename = isset($row['display_name'])
+            ? (string)$row['display_name']
+            : ($row['file_display_name'] !== null ? (string)$row['file_display_name'] : null);
 
         return [
             'id' => (int)$row['id'],
@@ -410,7 +414,7 @@ class BoxFileService
             'created_by_user_id' => $row['created_by_user_id'] !== null ? (int)$row['created_by_user_id'] : null,
             'created_at' => (string)$row['created_at'],
             'updated_at' => (string)$row['updated_at'],
-            'share_url' => share_page_url($token),
+            'share_url' => share_page_url($token, $filename),
             'download_url' => api_url('download.php', ['token' => $token]),
         ];
     }

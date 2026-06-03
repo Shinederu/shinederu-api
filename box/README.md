@@ -40,6 +40,22 @@ Tables:
 
 Les suppressions UI sont des soft deletes (`deleted_at`) et ne suppriment pas immediatement le fichier physique.
 
+## Liens publics
+
+Les liens publics generes par l'API utilisent le format lisible:
+
+```text
+https://box.shinederu.ch/s/<token>/<nom-du-fichier>
+```
+
+Exemple:
+
+```text
+https://box.shinederu.ch/s/012345.../dossier-partage.zip
+```
+
+Le token reste l'identifiant d'acces. Le nom du fichier est indicatif et sert a rendre le lien lisible. Les anciens liens `https://box.shinederu.ch/?share=<token>` restent compatibles cote frontend.
+
 ## Configuration
 
 Par defaut, l'API lit les variables depuis:

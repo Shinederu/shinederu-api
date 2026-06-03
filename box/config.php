@@ -465,9 +465,14 @@ function api_url(string $path, array $query = []): string
     return $url;
 }
 
-function share_page_url(string $token): string
+function share_page_url(string $token, ?string $filename = null): string
 {
     global $BASE_URL;
 
-    return rtrim($BASE_URL, '/') . '/?share=' . rawurlencode($token);
+    $url = rtrim($BASE_URL, '/') . '/s/' . rawurlencode($token);
+    if ($filename !== null && trim($filename) !== '') {
+        $url .= '/' . rawurlencode(trim($filename));
+    }
+
+    return $url;
 }
