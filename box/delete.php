@@ -1,34 +1,21 @@
 <?php
 declare(strict_types=1);
+
 require __DIR__ . '/config.php';
+require __DIR__ . '/services/BoxFileService.php';
 
-require_admin();
-rate_limit('delete', 10, 60); // 10 req/min/IP
+try {
+    require_admin();
+    rate_limit('delete', 60, 60);
 
-global $UPLOAD_DIR, $ALLOWED_EXT;
+    $data = request_data() + $_GET;
+    $id = isset($data['id']) ? (int)$data['id'] : 0;
+    if ($id <= 0) {
+        json_error('Parametre id requis.', 400);
+    }
 
-// Accept id via POST (preferred) or query for flexibility
-$id = $_POST['id'] ?? $_GET['id'] ?? '';
-if (!is_string($id) || $id === '') {
-    json_response(400, ['success' => false, 'error' => 'Paramètre id requis']);
+    (new BoxFileService())->deleteFile($id);
+    json_success();
+} catch (Throwable $exception) {
+    handle_api_exception($exception);
 }
-
-// Validate filename security (supports renamed files)
-if (!is_ascii_name($id) || is_double_ext_danger($id)) {
-    json_response(400, ['success' => false, 'error' => 'Identifiant invalide']);
-}
-$ext = get_ext($id);
-if ($ext === '' || !in_array($ext, $ALLOWED_EXT, true)) {
-    json_response(400, ['success' => false, 'error' => 'Extension non autorisée']);
-}
-
-$path = $UPLOAD_DIR . DIRECTORY_SEPARATOR . $id;
-if (!is_file($path)) {
-    json_response(404, ['success' => false, 'error' => 'Fichier introuvable']);
-}
-
-if (!@unlink($path)) {
-    json_response(500, ['success' => false, 'error' => 'Échec suppression']);
-}
-
-json_response(200, ['success' => true]);

@@ -85,11 +85,13 @@ load_dotenv($workspaceRoot . '/API/auth/.env');
 $BASE_URL = env('BASE_URL', 'https://box.shinederu.ch');
 $AUTH_PORTAL_URL = env('AUTH_PORTAL_URL', 'https://auth.shinederu.ch');
 $AUTH_API_BASE = env('AUTH_API_BASE', 'https://api.shinederu.ch/auth/');
+$BOX_API_BASE = env('BOX_API_BASE', 'https://api.shinederu.ch/box');
 
-$UPLOAD_DIR = env('UPLOAD_DIR', '/var/www/html/box.shinederu.ch/public/uploads');
+$UPLOAD_DIR = env('UPLOAD_DIR', '/var/www/ShinedeBoxStorage/files');
 $MAX_FILE_MB = (int)(env('MAX_FILE_MB', '20480'));
-$ALLOWED_EXT = array_filter(array_map('trim', explode(',', env('ALLOWED_EXT', '.zip,.jar,.png,.jpg,.jpeg,.pdf,.rar'))));
-$ALLOWED_MIME = array_filter(array_map('trim', explode(',', env('ALLOWED_MIME', 'application/zip,application/x-zip-compressed,application/x-zip,application/java-archive,application/x-java-archive,image/png,image/jpeg,application/pdf,application/vnd.rar,application/x-rar-compressed'))));
+$ALLOWED_EXT = array_filter(array_map('trim', explode(',', env('ALLOWED_EXT', '*'))));
+$BLOCKED_EXT = array_filter(array_map('trim', explode(',', env('BLOCKED_EXT', '.php,.phtml,.phar,.cgi,.pl,.py,.sh,.bash,.exe,.bat,.cmd,.com,.msi,.dll,.so'))));
+$ALLOWED_MIME = array_filter(array_map('trim', explode(',', env('ALLOWED_MIME', '*'))));
 
 $DB_TYPE = env('MQ_DB_TYPE', env('DB_TYPE', 'mysql'));
 $DB_HOST = env('MQ_DB_HOST', env('DB_HOST', '127.0.0.1'));
@@ -113,6 +115,43 @@ function json_response(int $status, array $data): void
     header('X-Content-Type-Options: nosniff');
     echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+function json_success(array $data = [], int $status = 200): void
+{
+    json_response($status, ['success' => true] + $data);
+}
+
+function json_error(string $message, int $status = 400, array $extra = []): void
+{
+    json_response($status, ['success' => false, 'error' => $message] + $extra);
+}
+
+function handle_api_exception(Throwable $exception): void
+{
+    error_log('[box] ' . get_class($exception) . ': ' . $exception->getMessage());
+
+    if ($exception instanceof InvalidArgumentException) {
+        json_error($exception->getMessage(), 400);
+    }
+
+    json_error('Erreur applicative Box.', 500);
+}
+
+function request_data(): array
+{
+    $contentType = strtolower((string)($_SERVER['CONTENT_TYPE'] ?? ''));
+    if (str_contains($contentType, 'application/json')) {
+        $raw = file_get_contents('php://input');
+        $decoded = is_string($raw) && $raw !== '' ? json_decode($raw, true) : [];
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        return [];
+    }
+
+    return $_POST;
 }
 
 function db(): PDO
@@ -289,6 +328,16 @@ function is_ascii_name(string $name): bool
     return (bool)preg_match('/^[\x20-\x7E]+$/', $name);
 }
 
+function is_safe_display_name(string $name): bool
+{
+    $name = trim($name);
+    if ($name === '' || strlen($name) > 255) {
+        return false;
+    }
+
+    return !preg_match('/[\\\/\x00-\x1F\x7F]/u', $name);
+}
+
 function get_ext(string $name): string
 {
     $ext = strtolower('.' . (pathinfo($name, PATHINFO_EXTENSION) ?: ''));
@@ -297,7 +346,60 @@ function get_ext(string $name): string
 
 function is_double_ext_danger(string $name): bool
 {
-    return (bool)preg_match('/\.(php|phtml|phar|pl|py|sh|exe|bat|cmd|com)(\..*)?$/i', $name);
+    global $BLOCKED_EXT;
+
+    $lower = strtolower($name);
+    foreach ($BLOCKED_EXT as $blockedExt) {
+        $blockedExt = strtolower(trim($blockedExt));
+        if ($blockedExt === '') {
+            continue;
+        }
+        if (!str_starts_with($blockedExt, '.')) {
+            $blockedExt = '.' . $blockedExt;
+        }
+        if (str_ends_with($lower, $blockedExt) || str_contains($lower, $blockedExt . '.')) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function is_extension_allowed(string $ext): bool
+{
+    global $ALLOWED_EXT, $BLOCKED_EXT;
+
+    $ext = strtolower(trim($ext));
+    if ($ext !== '' && !str_starts_with($ext, '.')) {
+        $ext = '.' . $ext;
+    }
+
+    foreach ($BLOCKED_EXT as $blockedExt) {
+        $blockedExt = strtolower(trim($blockedExt));
+        if ($blockedExt !== '' && !str_starts_with($blockedExt, '.')) {
+            $blockedExt = '.' . $blockedExt;
+        }
+        if ($ext !== '' && $ext === $blockedExt) {
+            return false;
+        }
+    }
+
+    if (in_array('*', $ALLOWED_EXT, true)) {
+        return true;
+    }
+
+    return $ext !== '' && in_array($ext, array_map('strtolower', $ALLOWED_EXT), true);
+}
+
+function is_mime_allowed(string $mime): bool
+{
+    global $ALLOWED_MIME;
+
+    if (in_array('*', $ALLOWED_MIME, true)) {
+        return $mime !== '';
+    }
+
+    return $mime !== '' && in_array($mime, $ALLOWED_MIME, true);
 }
 
 function mime_of(string $tmp): string
@@ -312,10 +414,46 @@ function unique_filename(string $ext): string
     $ts = date('Ymd-His');
     $rand = bin2hex(random_bytes(8));
     $ext = ltrim($ext, '.');
+    if ($ext === '') {
+        return sprintf('%s-%s', $ts, $rand);
+    }
+
     return sprintf('%s-%s.%s', $ts, $rand, $ext);
 }
 
-function storage_url(string $baseUrl, string $stored): string
+function random_public_id(): string
 {
-    return rtrim($baseUrl, '/') . '/uploads/' . rawurlencode($stored);
+    return rtrim(strtr(base64_encode(random_bytes(20)), '+/', '-_'), '=');
+}
+
+function random_share_token(): string
+{
+    return bin2hex(random_bytes(20));
+}
+
+function storage_path(string $stored): string
+{
+    global $UPLOAD_DIR;
+
+    return rtrim($UPLOAD_DIR, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $stored;
+}
+
+function api_url(string $path, array $query = []): string
+{
+    global $BOX_API_BASE;
+
+    $base = $BOX_API_BASE;
+    $url = rtrim($base, '/') . '/' . ltrim($path, '/');
+    if ($query !== []) {
+        $url .= '?' . http_build_query($query);
+    }
+
+    return $url;
+}
+
+function share_page_url(string $token): string
+{
+    global $BASE_URL;
+
+    return rtrim($BASE_URL, '/') . '/?share=' . rawurlencode($token);
 }

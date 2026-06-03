@@ -8,7 +8,7 @@ Backends des projets Shinederu et configuration de deploiement API.
 - `core/` : couche partagee pour droits/projets centralises
 - `melodyquest/` : backend MelodyQuest
 - `main-site/` : backend du site principal (annonces, contenus dynamiques)
-- `box/` : backend ShinedeBox (gestion fichiers admin)
+- `box/` : backend ShinedeBox (hebergement fichiers et liens de partage)
 - `wake/` : backend Wake-on-LAN dedie a ShinedeWake
 - `index.html` : page statique de base
 - `Nginx Configuration File.txt` : exemple de configuration Nginx
@@ -47,6 +47,7 @@ Convention de nommage:
 - Les tables Auth utilisent le prefixe `auth_` (`auth_sessions`, `auth_password_reset_tokens`, `auth_email_verification_tokens`).
 - Les tables du site principal utilisent le prefixe `main_` (`main_announcements`).
 - MelodyQuest conserve le prefixe `mq_`.
+- ShinedeBox conserve le prefixe `box_`.
 - Wake conserve le prefixe `wake_`.
 
 `auth?action=me` expose aussi `user.project_access` pour les droits projet courants, en gardant `user.is_admin` comme indicateur super-admin compatible avec les anciens frontends.
@@ -57,6 +58,7 @@ Migrations de nommage/alignment:
 - `core/sql/001_core_project_access.sql`
 - `auth/sql/001_auth_prefix_tables.sql`
 - `main-site/sql/002_rename_main_announcements.sql`
+- `box/sql/001_box_files.sql`
 - `wake/sql/002_align_user_foreign_keys.sql`
 - `wake/sql/003_wake_device_components.sql`
 
