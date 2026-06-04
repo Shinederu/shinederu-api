@@ -26,6 +26,14 @@ L'API gere les fichiers via metadonnees SQL et stockage physique hors webroot. L
 - Validation session dans `auth_sessions`.
 - Acces metier reserve au droit central `box.files.manage` ou au super-admin global.
 
+## Modele d'acces
+
+- ShinedeBox fonctionne actuellement comme une bibliotheque commune pour les utilisateurs autorises.
+- Tout utilisateur avec `box.files.manage` peut lister, uploader, telecharger, renommer, supprimer et partager les fichiers actifs.
+- Il n'y a pas encore de cloisonnement par proprietaire ou dossier prive.
+- `box_files.owner_user_id` conserve l'utilisateur qui a depose le fichier, mais cette colonne sert a l'audit et non a filtrer les droits.
+- Les liens publics par token donnent uniquement acces au fichier cible, sans session et sans acces a la bibliotheque.
+
 ## Donnees
 
 Migration principale:
@@ -34,8 +42,8 @@ Migration principale:
 
 Tables:
 
-- `box_files` : metadonnees fichier, nom public, nom stocke, taille, MIME, checksum, soft delete.
-- `box_shares` : tokens publics, expiration optionnelle, limite optionnelle de telechargements.
+- `box_files` : metadonnees fichier, proprietaire d'audit, nom public, nom stocke, taille, MIME, checksum, soft delete.
+- `box_shares` : tokens publics, createur d'audit, expiration optionnelle, limite optionnelle de telechargements.
 - `box_download_events` : journal minimal des telechargements avec hashes IP/user-agent.
 
 Les suppressions UI sont des soft deletes (`deleted_at`) et ne suppriment pas immediatement le fichier physique.
