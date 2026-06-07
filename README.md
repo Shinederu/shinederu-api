@@ -53,6 +53,36 @@ Convention de nommage:
 `auth?action=me` expose aussi `user.project_access` pour les droits projet courants, en gardant `user.is_admin` comme indicateur super-admin compatible avec les anciens frontends.
 Les endpoints d'administration `core_*` passent par `auth` et exigent `core.super_admin`.
 
+## Auth: avatars utilisateur
+
+L'API Auth stocke les avatars uploades dans `users.avatar_image` au format PNG normalise par GD.
+
+Points importants:
+
+- `auth?action=updateAvatar` accepte PNG, JPEG et WebP, puis normalise l'image via `imagecreatefromstring()`.
+- Le conteneur PHP-FPM de production doit donc charger l'extension `gd`.
+- `auth?action=getAvatar&user_id=...` renvoie directement l'image PNG avec `Content-Type: image/png`.
+- `users.avatar_url` peut contenir une URL historique. Lorsqu'un utilisateur est renvoye par l'API, les anciennes URLs `getAvatar` sont reconstruites avec le `BASE_API` courant pour eviter de garder un ancien domaine.
+- `auth/.env` doit utiliser `BASE_API=https://api.shinederu.ch/auth/`. L'ancien domaine `api.shinederu.lol` ne doit plus etre utilise.
+
+Attention au deploiement PHP:
+
+- Ne pas monter un dossier entier sur `/usr/local/etc/php/conf.d`, car cela masque les fichiers `.ini` internes qui activent les extensions de l'image.
+- Monter uniquement le fichier de configuration custom, par exemple:
+
+```yaml
+volumes:
+  - /share/Projets/PROD:/var/www
+  - /share/Docker/PHP/conf.d/config.ini:/usr/local/etc/php/conf.d/99-config.ini:ro
+```
+
+Verification rapide dans le conteneur PHP:
+
+```bash
+php -m | grep -i gd
+php -r "var_dump(extension_loaded('gd'), function_exists('imagecreatefromstring'));"
+```
+
 Migrations de nommage/alignment:
 
 - `core/sql/001_core_project_access.sql`
