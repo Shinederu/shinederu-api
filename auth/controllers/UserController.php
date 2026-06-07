@@ -118,13 +118,18 @@ class UserController
             json_error('Avatar non trouvé', 404);
         }
 
+        $mime = $profileService->detectImageMime($avatar);
+        if (!$profileService->isSupportedImageMime($mime)) {
+            $mime = 'image/png';
+        }
+
         if (function_exists('ob_get_level')) {
             while (ob_get_level() > 0) {
                 @ob_end_clean();
             }
         }
 
-        header('Content-Type: image/png');
+        header('Content-Type: ' . $mime);
         header('X-Content-Type-Options: nosniff');
         header('Cross-Origin-Resource-Policy: cross-origin');
         header('Cache-Control: public, max-age=31536000, immutable');
@@ -155,16 +160,18 @@ class UserController
             json_error('Image trop lourde (max 5 Mo).', 400);
         }
 
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo ? $finfo->buffer($avatarBytes) : null;
-        $allowed = ALLOWED_MIME;
-        if (!$mime || !in_array($mime, $allowed, true)) {
+        $profile = new ProfileService();
+        $mime = $profile->detectImageMime($avatarBytes);
+        if (!$profile->isSupportedImageMime($mime)) {
             json_error('Type non autorisé (PNG, JPEG ou WebP).', 400);
         }
 
-        $profile = new ProfileService();
-        $png = $profile->normalizeToPng($avatarBytes);
-        $result = $profile->saveUploadedPng($userId, $png);
+        if (!$profile->isReadableImage($avatarBytes)) {
+            json_error('Fichier d\'image invalide ou corrompu', 400);
+        }
+
+        $avatar = $profile->prepareUploadedAvatar($avatarBytes, $mime);
+        $result = $profile->saveUploadedAvatar($userId, $avatar);
 
         if (!$result) {
             json_error("Échec de la mise à jour de l'image de profil dans la base de données", 500);
