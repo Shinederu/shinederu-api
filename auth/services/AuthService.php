@@ -2,6 +2,7 @@
 require_once __DIR__ . '/DatabaseService.php';
 require_once __DIR__ . '/TokenService.php';
 require_once __DIR__ . '/../../core/services/ProjectAccessService.php';
+require_once __DIR__ . '/../config/config.php';
 
 class AuthService
 {
@@ -407,8 +408,47 @@ class AuthService
         }
         $user['is_admin'] = $isAdmin;
         $user['role'] = $isAdmin ? 'admin' : 'user';
+        $user = $this->normalizeAvatarUrl($user);
 
         return $user;
+    }
+
+    private function normalizeAvatarUrl(array $user): array
+    {
+        $avatarUrl = $user['avatar_url'] ?? null;
+        if (!is_string($avatarUrl) || $avatarUrl === '' || !str_contains($avatarUrl, 'action=getAvatar')) {
+            return $user;
+        }
+
+        $userId = isset($user['id']) ? (int)$user['id'] : 0;
+        if ($userId <= 0) {
+            return $user;
+        }
+
+        $query = parse_url($avatarUrl, PHP_URL_QUERY);
+        $params = [];
+        if (is_string($query)) {
+            parse_str($query, $params);
+        }
+
+        $user['avatar_url'] = $this->buildAvatarUrl($userId, isset($params['v']) ? (string)$params['v'] : null);
+        return $user;
+    }
+
+    private function buildAvatarUrl(int $userId, ?string $version = null): string
+    {
+        $base = rtrim(BASE_API, '/');
+        $separator = str_ends_with($base, 'index.php') ? '?' : '/?';
+        $params = [
+            'action' => 'getAvatar',
+            'user_id' => $userId
+        ];
+
+        if ($version !== null && $version !== '') {
+            $params['v'] = $version;
+        }
+
+        return $base . $separator . http_build_query($params);
     }
 
     private function projectAccess(): ProjectAccessService

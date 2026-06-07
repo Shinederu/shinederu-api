@@ -43,7 +43,7 @@ class ProfileService
     public function saveUploadedPng(int $userId, string $pngBytes)
     {
         $v = time();
-        $url = BASE_API . '?action=getAvatar&user_id=' . $userId . '&v=' . $v;
+        $url = $this->buildAvatarUrl($userId, (string)$v);
 
         $stmt = $this->db->update('users', [
             'avatar_image' => $pngBytes,
@@ -102,6 +102,22 @@ class ProfileService
         imagedestroy($dst);
 
         return $png;
+    }
+
+    private function buildAvatarUrl(int $userId, ?string $version = null): string
+    {
+        $base = rtrim(BASE_API, '/');
+        $separator = str_ends_with($base, 'index.php') ? '?' : '/?';
+        $params = [
+            'action' => 'getAvatar',
+            'user_id' => $userId
+        ];
+
+        if ($version !== null && $version !== '') {
+            $params['v'] = $version;
+        }
+
+        return $base . $separator . http_build_query($params);
     }
 
 }
