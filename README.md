@@ -91,6 +91,8 @@ Migrations de nommage/alignment:
 - `box/sql/001_box_files.sql`
 - `wake/sql/002_align_user_foreign_keys.sql`
 - `wake/sql/003_wake_device_components.sql`
+- `melodyquest/sql/006_melodyquest_merge_duplicate_categories.sql`
+- `melodyquest/sql/007_melodyquest_game_options.sql`
 
 ## MelodyQuest (blindtest)
 
@@ -109,6 +111,12 @@ Migrations de nommage/alignment:
 Migration schema MelodyQuest:
 
 - `melodyquest/sql/001_melodyquest_core.sql`
+- `melodyquest/sql/002_melodyquest_lobby_settings.sql`
+- `melodyquest/sql/003_melodyquest_family_aliases.sql`
+- `melodyquest/sql/004_melodyquest_track_validation.sql`
+- `melodyquest/sql/005_melodyquest_track_video_id_only.sql`
+- `melodyquest/sql/006_melodyquest_merge_duplicate_categories.sql`
+- `melodyquest/sql/007_melodyquest_game_options.sql`
 
 ## Droits centralises (`core_*`)
 
