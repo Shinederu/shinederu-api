@@ -53,6 +53,12 @@ Convention de nommage:
 `auth?action=me` expose aussi `user.project_access` pour les droits projet courants, en gardant `user.is_admin` comme indicateur super-admin compatible avec les anciens frontends.
 Les endpoints d'administration `core_*` passent par `auth` et exigent `core.super_admin`.
 
+## Auth: comptes utilisateur
+
+- Les pseudos font entre 4 et 24 caracteres. La limite est centralisee dans `auth/config/config.php` avec `USERNAME_MIN_LENGTH` et `USERNAME_MAX_LENGTH`.
+- `auth?action=listUsers` exige le droit central `auth.users.manage`. Il renvoie les comptes avec l'etat `email_verified`, l'avatar normalise et `project_access` pour afficher les roles projets centralises dans le frontend principal.
+- Les roles et permissions applicatives doivent etre modifies via les endpoints `core_*` et l'interface Shinederu `/permissions`; l'ancien endpoint `updateUserRole` reste seulement un chemin de compatibilite de transition.
+
 ## Auth: avatars utilisateur
 
 L'API Auth stocke les avatars uploades dans `users.avatar_image` au format PNG normalise par GD.

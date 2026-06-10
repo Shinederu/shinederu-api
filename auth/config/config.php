@@ -8,3 +8,7 @@ define('ALLOWED_MIME', array_map('trim', explode(',', $allowedMimeEnv)));
 
 // Session duration (hours). Default: 7 days (168 hours)
 define('SESSION_DURATION_HOURS', (int)($_ENV['SESSION_DURATION_HOURS'] ?? 168));
+
+// Username policy shared by register and profile update.
+define('USERNAME_MIN_LENGTH', 4);
+define('USERNAME_MAX_LENGTH', 24);

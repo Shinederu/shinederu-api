@@ -93,12 +93,12 @@ class UserController
         $array = sanitizeArray($data);
         $username = $array['username'];
 
-        if (strlen($username) < 4) {
-            json_error("Nom d'utilisateur trop court (minimum 4 caractères)", 400);
+        if (strlen($username) < USERNAME_MIN_LENGTH) {
+            json_error("Nom d'utilisateur trop court (minimum " . USERNAME_MIN_LENGTH . " caractères)", 400);
         }
 
-        if (strlen($username) > 64) {
-            json_error("Nom d'utilisateur trop long (maximum 64 caractères)", 400);
+        if (strlen($username) > USERNAME_MAX_LENGTH) {
+            json_error("Nom d'utilisateur trop long (maximum " . USERNAME_MAX_LENGTH . " caractères)", 400);
         }
 
         $profileService = new ProfileService();

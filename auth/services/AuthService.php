@@ -226,7 +226,9 @@ class AuthService
             'id',
             'username',
             'email',
+            'avatar_url',
             'role',
+            'email_verified',
             'created_at'
         ];
 
@@ -244,7 +246,15 @@ class AuthService
             return [];
         }
 
-        return array_map(fn($user) => $this->mapUserAdminFields($user), $users);
+        return array_map(function ($user) {
+            $mapped = $this->mapUserAdminFields($user);
+            if (!is_array($mapped) || empty($mapped['id'])) {
+                return $mapped;
+            }
+
+            $mapped['project_access'] = $this->getProjectAccessForUser((int)$mapped['id']);
+            return $mapped;
+        }, $users);
     }
 
     public function updateUserRole(int $userId, string $role): bool
@@ -408,6 +418,9 @@ class AuthService
         }
         $user['is_admin'] = $isAdmin;
         $user['role'] = $isAdmin ? 'admin' : 'user';
+        if (array_key_exists('email_verified', $user)) {
+            $user['email_verified'] = $this->toBool($user['email_verified']);
+        }
         $user = $this->normalizeAvatarUrl($user);
 
         return $user;
