@@ -101,6 +101,10 @@ try {
                     $userId = AuthMiddleware::check();
                     (new UserController())->updateAvatar($body, $userId);
                     exit;
+                case 'updateUserAvatarAdmin':
+                    $userId = AuthMiddleware::check();
+                    (new UserController())->updateManagedUserAvatar($body, $userId);
+                    exit;
                 default:
                     unknownAction('POST');
                     exit;
@@ -119,6 +123,10 @@ try {
                 case 'updateUserRole':
                     $userId = AuthMiddleware::check();
                     (new UserController())->updateUserRole($body, $userId);
+                    exit;
+                case 'updateUserAdmin':
+                    $userId = AuthMiddleware::check();
+                    (new UserController())->updateManagedUser($body, $userId);
                     exit;
                 case 'saveCoreProject':
                     $userId = AuthMiddleware::check();

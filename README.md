@@ -57,6 +57,8 @@ Les endpoints d'administration `core_*` passent par `auth` et exigent `core.supe
 
 - Les pseudos font entre 4 et 24 caracteres. La limite est centralisee dans `auth/config/config.php` avec `USERNAME_MIN_LENGTH` et `USERNAME_MAX_LENGTH`.
 - `auth?action=listUsers` exige le droit central `auth.users.manage`. Il renvoie les comptes avec l'etat `email_verified`, l'avatar normalise et `project_access` pour afficher les roles projets centralises dans le frontend principal.
+- `auth?action=updateUserAdmin` exige `auth.users.manage` et permet de modifier le pseudo et le statut de blocage d'un compte. Un compte bloque ne peut plus se connecter; ses sessions sont supprimees au moment du blocage.
+- `auth?action=updateUserAvatarAdmin` exige `auth.users.manage` et permet a un administrateur de remplacer l'avatar d'un utilisateur.
 - Les roles et permissions applicatives doivent etre modifies via les endpoints `core_*` et l'interface Shinederu `/permissions`; l'ancien endpoint `updateUserRole` reste seulement un chemin de compatibilite de transition.
 
 ## Auth: avatars utilisateur
@@ -93,6 +95,7 @@ Migrations de nommage/alignment:
 
 - `core/sql/001_core_project_access.sql`
 - `auth/sql/001_auth_prefix_tables.sql`
+- `auth/sql/002_user_account_moderation.sql`
 - `main-site/sql/002_rename_main_announcements.sql`
 - `box/sql/001_box_files.sql`
 - `wake/sql/002_align_user_foreign_keys.sql`

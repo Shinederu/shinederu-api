@@ -131,6 +131,10 @@ class AuthController
             json_error('Identifiants invalides', 401);
         }
 
+        if ($auth->isUserBannedRecord($user)) {
+            json_error('Compte bloque. Contactez un administrateur si vous pensez que c\'est une erreur.', 403);
+        }
+
         if (!$user['email_verified']) {
             $rec = $auth->getEmailVerificationTokenByID($user['id']);
             if (!$rec || (isset($rec['expires_at']) && strtotime($rec['expires_at']) < time())) {

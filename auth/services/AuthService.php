@@ -8,6 +8,7 @@ class AuthService
 {
     private $db;
     private ?bool $hasIsAdminColumn = null;
+    private ?array $userColumnCache = null;
     private ?ProjectAccessService $projectAccess = null;
 
     public function __construct()
@@ -71,6 +72,15 @@ class AuthService
             return $user;
         }
         return false;
+    }
+
+    public function isUserBannedRecord($user): bool
+    {
+        if (!is_array($user)) {
+            return false;
+        }
+
+        return $this->toBool($user['is_banned'] ?? null);
     }
 
     /**
@@ -147,18 +157,8 @@ class AuthService
      */
     public function getUserById($userId)
     {
-        $columns = [
-            'id',
-            'username',
-            'email',
-            'avatar_url',
-            'role',
-            'created_at'
-        ];
-
-        if ($this->hasIsAdminColumn()) {
-            $columns[] = 'is_admin';
-        }
+        $columns = $this->getAdminUserColumns();
+        $columns[] = 'password_hash';
 
         $user = $this->db->get('users', $columns, [
             'id' => $userId
@@ -222,19 +222,7 @@ class AuthService
 
     public function listUsersForAdmin(): array
     {
-        $columns = [
-            'id',
-            'username',
-            'email',
-            'avatar_url',
-            'role',
-            'email_verified',
-            'created_at'
-        ];
-
-        if ($this->hasIsAdminColumn()) {
-            $columns[] = 'is_admin';
-        }
+        $columns = $this->getAdminUserColumns();
 
         $users = $this->db->select('users', $columns, [
             'ORDER' => [
@@ -247,14 +235,22 @@ class AuthService
         }
 
         return array_map(function ($user) {
-            $mapped = $this->mapUserAdminFields($user);
-            if (!is_array($mapped) || empty($mapped['id'])) {
-                return $mapped;
-            }
-
-            $mapped['project_access'] = $this->getProjectAccessForUser((int)$mapped['id']);
-            return $mapped;
+            return $this->withProjectAccess($this->mapUserAdminFields($user));
         }, $users);
+    }
+
+    public function getUserForAdmin(int $userId): ?array
+    {
+        if ($userId <= 0) {
+            return null;
+        }
+
+        $user = $this->db->get('users', $this->getAdminUserColumns(), ['id' => $userId]);
+        if (!is_array($user)) {
+            return null;
+        }
+
+        return $this->withProjectAccess($this->mapUserAdminFields($user));
     }
 
     public function updateUserRole(int $userId, string $role): bool
@@ -273,6 +269,31 @@ class AuthService
         $this->syncGlobalAdminRole($userId, $role === 'admin');
 
         return true;
+    }
+
+    public function setUserBanStatus(int $userId, bool $isBanned, int $adminUserId, string $reason = ''): bool
+    {
+        if (!$this->hasUserColumn('is_banned')) {
+            return false;
+        }
+
+        $payload = [
+            'is_banned' => $isBanned ? 1 : 0,
+        ];
+
+        if ($this->hasUserColumn('banned_at')) {
+            $payload['banned_at'] = $isBanned ? date('Y-m-d H:i:s') : null;
+        }
+        if ($this->hasUserColumn('banned_by_user_id')) {
+            $payload['banned_by_user_id'] = $isBanned ? $adminUserId : null;
+        }
+        if ($this->hasUserColumn('ban_reason')) {
+            $payload['ban_reason'] = $isBanned && $reason !== '' ? mb_substr($reason, 0, 255) : null;
+        }
+
+        $this->db->update('users', $payload, ['id' => $userId]);
+
+        return $this->db->error === null;
     }
 
 
@@ -377,17 +398,60 @@ class AuthService
             return $this->hasIsAdminColumn;
         }
 
-        $result = $this->db->query(
-            "SELECT 1
-             FROM INFORMATION_SCHEMA.COLUMNS
-             WHERE TABLE_SCHEMA = DATABASE()
-               AND TABLE_NAME = 'users'
-               AND COLUMN_NAME = 'is_admin'
-             LIMIT 1"
-        )->fetch();
-
-        $this->hasIsAdminColumn = (bool)$result;
+        $this->hasIsAdminColumn = $this->hasUserColumn('is_admin');
         return $this->hasIsAdminColumn;
+    }
+
+    private function hasUserColumn(string $column): bool
+    {
+        if ($this->userColumnCache === null) {
+            $rows = $this->db->query(
+                "SELECT COLUMN_NAME
+                 FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = 'users'"
+            )->fetchAll();
+
+            $this->userColumnCache = [];
+            foreach ($rows as $row) {
+                if (isset($row['COLUMN_NAME'])) {
+                    $this->userColumnCache[(string)$row['COLUMN_NAME']] = true;
+                }
+            }
+        }
+
+        return isset($this->userColumnCache[$column]);
+    }
+
+    private function getAdminUserColumns(): array
+    {
+        $columns = [
+            'id',
+            'username',
+            'email',
+            'avatar_url',
+            'role',
+            'email_verified',
+            'created_at'
+        ];
+
+        foreach (['is_admin', 'is_banned', 'banned_at', 'banned_by_user_id', 'ban_reason'] as $optionalColumn) {
+            if ($this->hasUserColumn($optionalColumn)) {
+                $columns[] = $optionalColumn;
+            }
+        }
+
+        return $columns;
+    }
+
+    private function withProjectAccess($user): ?array
+    {
+        if (!is_array($user) || empty($user['id'])) {
+            return is_array($user) ? $user : null;
+        }
+
+        $user['project_access'] = $this->getProjectAccessForUser((int)$user['id']);
+        return $user;
     }
 
     private function toBool($value): bool
@@ -421,6 +485,10 @@ class AuthService
         if (array_key_exists('email_verified', $user)) {
             $user['email_verified'] = $this->toBool($user['email_verified']);
         }
+        $user['is_banned'] = $this->toBool($user['is_banned'] ?? null);
+        $user['banned_at'] = isset($user['banned_at']) ? (string)$user['banned_at'] : '';
+        $user['banned_by_user_id'] = isset($user['banned_by_user_id']) ? (int)$user['banned_by_user_id'] : 0;
+        $user['ban_reason'] = isset($user['ban_reason']) ? (string)$user['ban_reason'] : '';
         $user = $this->normalizeAvatarUrl($user);
 
         return $user;

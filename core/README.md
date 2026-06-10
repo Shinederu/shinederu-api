@@ -35,7 +35,7 @@ Administration:
 - `PUT /auth/` avec `action=saveCoreProject`, `saveCoreRole`, `saveCorePermission`, `setCoreRolePermissions` ou `setCoreUserProjectRoles` modifie le modele.
 - Ces endpoints sont reserves a `core.super_admin`.
 - L'interface utilisateur correspondante est dans `Shinederu` sur `/permissions` (tuile Dashboard "Permissions").
-- La page Shinederu `/users` est un annuaire de consultation des comptes et roles projets; les modifications de roles doivent rester dans `/permissions`.
+- La page Shinederu `/users` est un annuaire et un panneau de management leger des comptes (pseudo, avatar, blocage). Les modifications de roles doivent rester dans `/permissions`.
 
 Convention backend:
 
