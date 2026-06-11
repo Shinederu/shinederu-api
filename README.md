@@ -10,6 +10,7 @@ Backends des projets Shinederu et configuration de deploiement API.
 - `main-site/` : backend du site principal (annonces, contenus dynamiques)
 - `box/` : backend ShinedeBox (hebergement fichiers et liens de partage)
 - `wake/` : backend Wake-on-LAN dedie a ShinedeWake
+- `arcadia/` : deploiement runtime du backend Symfony Arcadia, non versionne dans ce repo
 - `index.html` : page statique de base
 - `Nginx Configuration File.txt` : exemple de configuration Nginx
 
@@ -21,6 +22,7 @@ Backends des projets Shinederu et configuration de deploiement API.
 - Main site: `API/main-site/index.php` -> `https://api.shinederu.ch/main-site/`
 - Box: `API/box/*.php` -> `https://api.shinederu.ch/box/`
 - Wake: `API/wake/index.php` -> `https://api.shinederu.ch/wake/`
+- Arcadia: fallback public `API/index.php` -> `https://api.shinederu.ch/arcadia/servers`
 
 ## CORS et domaines
 
@@ -49,6 +51,20 @@ Convention de nommage:
 - MelodyQuest conserve le prefixe `mq_`.
 - ShinedeBox conserve le prefixe `box_`.
 - Wake conserve le prefixe `wake_`.
+- Arcadia conserve le prefixe `arcadia_`.
+
+## Arcadia
+
+Le code source du backend Arcadia vit dans `P:\DEV\GitHub\Arcadia-API`. En production, son dossier runtime est copie sous `API/arcadia`.
+
+Le fallback racine `API/index.php` expose temporairement:
+
+- `GET /arcadia/servers`
+- `GET /arcadia/servers/{slug}`
+
+Ces routes lisent directement les tables `arcadia_*` en PDO pour garder le catalogue public disponible. Les autres routes `/arcadia/*` sont transmises au front controller Symfony `arcadia/public/index.php`.
+
+Ce contournement est necessaire tant que l'image PHP-FPM active charge l'extension native `psr`, incompatible avec `symfony/cache` 6.4. Une fois l'image PHP rebuild sans `psr`, Symfony pourra reprendre tout le routage Arcadia.
 
 `auth?action=me` expose aussi `user.project_access` pour les droits projet courants, en gardant `user.is_admin` comme indicateur super-admin compatible avec les anciens frontends.
 Les endpoints d'administration `core_*` passent par `auth` et exigent `core.super_admin`.
