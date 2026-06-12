@@ -68,6 +68,11 @@ Convention de nommage:
 
 Le code source du backend Arcadia vit dans `P:\DEV\GitHub\Arcadia-API`. En production, son dossier runtime est copie sous `API/arcadia`.
 
+La reprise du projet est documentee dans:
+
+- `P:\DEV\GitHub\Arcadia\HANDOFF.md`
+- `P:\DEV\GitHub\Arcadia-API\HANDOFF.md`
+
 Le fallback racine `API/index.php` expose temporairement:
 
 - `GET /arcadia/servers`
