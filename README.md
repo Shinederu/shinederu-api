@@ -2,6 +2,17 @@
 
 Backends des projets Shinederu et configuration de deploiement API.
 
+## Reprise site principal
+
+Le handoff du site principal `https://shinederu.ch/` est documente cote frontend
+dans `../Shinederu/REPRISE.md`.
+
+Cote API, les modules lies au site principal sont `auth/`, `main-site/` et `core/`.
+Etat au 2026-06-12: projet principal en pause stable; la migration
+`auth/sql/002_user_account_moderation.sql` a ete appliquee au schema
+`ShinedeCore`, et la page frontend `/users` s'appuie sur `listUsers`,
+`updateUserAdmin` et `updateUserAvatarAdmin`.
+
 ## Contenu
 
 - `auth/` : API d'authentification
